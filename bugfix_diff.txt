@@ -1,0 +1,1133 @@
+diff --git a/Void_Depth V8.0.html b/Void_Depth V8.0.html
+index ff70071..e2c4756 100644
+--- a/Void_Depth V8.0.html	
++++ b/Void_Depth V8.0.html	
+@@ -21,14 +21,16 @@ canvas{display:block;position:absolute;top:0;left:0}
+ #hud{position:fixed;top:0;left:0;width:100%;padding:14px 20px;display:none;z-index:10;pointer-events:none;justify-content:space-between;align-items:flex-start}
+ .hud-l,.hud-r{display:flex;flex-direction:column;gap:5px}.hud-r{align-items:flex-end}
+ .hl{font-family:'Silkscreen',monospace;font-size:7px;color:rgba(200,180,255,0.35);letter-spacing:2.5px;text-transform:uppercase;display:flex;align-items:center;gap:6px}
++.hl span{transition:transform 0.15s ease-out,color 0.2s,text-shadow 0.2s;display:inline-block}
+ .bar-out{width:130px;height:6px;background:rgba(255,255,255,0.04);border-radius:3px;overflow:hidden;position:relative;border:1px solid rgba(255,255,255,0.02)}
+ .bar-in{height:100%;border-radius:2px;position:relative}
+ .bar-in::after{content:'';position:absolute;top:0;left:0;width:100%;height:50%;background:rgba(255,255,255,0.08);border-radius:2px 2px 0 0}
+ .bar-drain{position:absolute;top:0;right:0;height:100%;background:rgba(255,255,255,0.35);border-radius:2px;transition:opacity 0.3s}
+ .hp-bar{background:linear-gradient(90deg,#e63462,#fe6d73);box-shadow:0 0 8px rgba(230,52,98,0.3)}
+-.xp-bar{background:linear-gradient(90deg,#7b2ff7,#c471f5);box-shadow:0 0 8px rgba(123,47,247,0.2)}
+-.dash-bar{background:linear-gradient(90deg,#00b4d8,#48cae4);box-shadow:0 0 8px rgba(0,180,216,0.2)}
+-.ability-bar{background:linear-gradient(90deg,#f77f00,#fcbf49);box-shadow:0 0 8px rgba(247,127,0,0.2)}
++.xp-bar{background:linear-gradient(90deg,#7b2ff7,#c471f5);box-shadow:0 0 8px rgba(123,47,247,0.2);transition:width 0.3s ease-out}
++.xp-bar.xp-full{animation:xpPulse 0.6s ease-out;box-shadow:0 0 16px rgba(196,113,245,0.8),0 0 32px rgba(123,47,247,0.5)}
++.dash-bar{background:linear-gradient(90deg,#00b4d8,#48cae4);box-shadow:0 0 8px rgba(0,180,216,0.2);transition:width 0.15s ease-out}
++.ability-bar{background:linear-gradient(90deg,#f77f00,#fcbf49);box-shadow:0 0 8px rgba(247,127,0,0.2);transition:width 0.2s ease-out}
+ .shield-bar{background:linear-gradient(90deg,#06d6a0,#64dfdf);box-shadow:0 0 8px rgba(6,214,160,0.2)}
+ #weapon-display{font-family:'Silkscreen',monospace;font-size:7px;color:rgba(255,204,68,0.6);letter-spacing:1.5px;margin-top:4px}
+ #status-icons{display:flex;gap:4px;margin-top:2px}
+@@ -39,7 +41,10 @@ canvas{display:block;position:absolute;top:0;left:0}
+ /* ═══════ COMBO ═══════ */
+ #combo-display{position:fixed;top:50%;right:22px;transform:translateY(-50%);font-family:'Silkscreen',monospace;text-align:right;pointer-events:none;z-index:12;opacity:0;transition:opacity 0.2s}
+ #combo-display.show{opacity:1}
+-#combo-count{font-size:40px;color:#ffcc00;text-shadow:0 0 20px rgba(255,200,0,0.6),0 0 40px rgba(255,150,0,0.3),0 0 80px rgba(255,100,0,0.1);line-height:1}
++#combo-count{font-size:40px;color:#ffcc00;text-shadow:0 0 20px rgba(255,200,0,0.6),0 0 40px rgba(255,150,0,0.3),0 0 80px rgba(255,100,0,0.1);line-height:1;transition:color 0.15s,text-shadow 0.15s}
++#combo-count.pop{animation:comboPop 0.18s cubic-bezier(0.34,1.56,0.64,1)}
++@keyframes comboPop{0%{transform:scale(1.35)}100%{transform:scale(1)}}
++@keyframes xpPulse{0%{box-shadow:0 0 4px rgba(196,113,245,0.3)}50%{box-shadow:0 0 20px rgba(196,113,245,1),0 0 40px rgba(123,47,247,0.7)}100%{box-shadow:0 0 8px rgba(123,47,247,0.2)}}
+ #combo-mult{font-size:10px;color:rgba(255,200,0,0.5);letter-spacing:4px}
+ #combo-label{font-size:7px;color:rgba(255,200,0,0.25);letter-spacing:3px}
+ #streak-msg{position:fixed;top:28%;left:50%;transform:translate(-50%,-50%);font-family:'Silkscreen',monospace;font-size:24px;letter-spacing:10px;pointer-events:none;z-index:14;opacity:0;transition:opacity 0.3s,transform 0.3s}
+@@ -81,6 +86,11 @@ canvas{display:block;position:absolute;top:0;left:0}
+ .btn::before{content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;background:linear-gradient(90deg,transparent,rgba(180,140,255,0.06),transparent);transition:left 0.5s}.btn:hover::before{left:100%}
+ .btn:hover{border-color:rgba(180,140,255,0.5);box-shadow:0 0 30px rgba(140,80,255,0.1),inset 0 0 20px rgba(140,80,255,0.03);color:#dcc0ff;transform:translateY(-1px)}
+ .btn:active{transform:translateY(0)}
++.s-row{display:flex;align-items:center;justify-content:space-between;margin:8px 0;padding:6px 12px;background:rgba(180,140,255,0.03);border:1px solid rgba(180,140,255,0.08);border-radius:3px}
++.s-row label{font-family:Silkscreen,monospace;font-size:8px;color:rgba(200,180,255,0.5);letter-spacing:2px}
++.s-row input[type=range]{width:100px;accent-color:#c8a0ff;background:transparent}
++.s-row select{font-family:Silkscreen,monospace;font-size:8px;background:rgba(10,10,20,0.8);color:#c8a0ff;border:1px solid rgba(180,140,255,0.2);padding:3px 6px;border-radius:2px}
++.s-row input[type=checkbox]{accent-color:#c8a0ff;width:16px;height:16px}
+ #death-scr{background:radial-gradient(ellipse at 50% 35%,rgba(50,8,18,0.97),rgba(8,8,14,0.99) 65%)}
+ #death-scr h2{font-family:'Silkscreen',monospace;font-size:32px;color:#ff3366;letter-spacing:12px;margin-bottom:14px;text-shadow:0 0 30px rgba(255,50,100,0.4),0 0 60px rgba(255,50,100,0.1);animation:statReveal .5s ease-out both}
+ #death-scr .ds-stat{opacity:0;animation:statReveal .4s ease-out both}
+@@ -288,6 +298,8 @@ canvas{display:block;position:absolute;top:0;left:0}
+ <div class="info"><b>WASD</b> move · <b>SPACE/CLICK</b> attack · <b>HOLD</b> charge attack<br><b>SHIFT</b> dash · <b>Q</b> ability · <b>E</b> interact · <b>TAB</b> inventory<br><b>F</b> parry · <b>R</b> weapon special<br><b>TOUCH:</b> left=move · right=attack · double-tap=dash</div>
+ <button class="btn" id="start-btn">BEGIN DESCENT</button>
+ <button class="btn" id="daily-btn" style="display:none;margin-top:6px;font-size:9px;background:rgba(255,204,0,0.08);border-color:rgba(255,204,0,0.25);color:#ffcc00">☀ DAILY CHALLENGE</button>
++<button class="btn" onclick="openCodex()" style="margin-top:6px;font-size:8px;padding:8px 24px">CODEX</button>
++<button class="btn" onclick="openSettings()" style="margin-top:6px;font-size:8px;padding:8px 24px">SETTINGS</button>
+ <div id="unlock-badges" style="display:flex;gap:6px;justify-content:center;margin-top:8px;flex-wrap:wrap"></div></div>
+ 
+ <div class="scr off" id="class-scr">
+@@ -295,13 +307,20 @@ canvas{display:block;position:absolute;top:0;left:0}
+ <div class="class-title">CHOOSE YOUR PATH</div>
+ <div class="class-subtitle">EACH PATH SHAPES YOUR DESTINY</div>
+ <div id="void-rank-toggle" style="font-family:Silkscreen,monospace;font-size:8px;color:rgba(255,100,170,0.35);letter-spacing:2px;margin-bottom:8px;cursor:pointer;display:none" onclick="toggleVoidRank()"></div>
++<div id="curse-panel" style="margin-bottom:10px;display:none">
++<div style="font-family:Silkscreen,monospace;font-size:8px;color:rgba(255,100,100,0.4);letter-spacing:3px;margin-bottom:6px">CURSES (OPTIONAL)</div>
++<div id="curse-grid" style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-bottom:4px"></div>
++<div id="curse-mult" style="font-family:Silkscreen,monospace;font-size:8px;color:rgba(255,200,100,0.4);letter-spacing:2px"></div>
++</div>
+ <div class="class-cards" id="class-cards"></div>
+ </div>
+ 
+ <div class="scr off" id="death-scr"><h2>DEFEATED</h2>
+ <div id="d-rating"></div>
++<div id="d-legend" style="font-family:Cinzel,serif;font-size:11px;color:rgba(255,180,200,0.5);letter-spacing:3px;margin:4px 0 2px;font-style:italic"></div>
+ <div class="ds-lbl">FLOOR</div><div class="ds-val" id="d-floor">1</div>
+ <div id="d-time">00:00</div>
++<div id="d-cause" style="font-family:'Silkscreen',monospace;font-size:8px;color:rgba(255,100,120,0.4);letter-spacing:2px;margin:4px 0"></div>
+ <div id="d-epitaph"></div>
+ <div class="ds-row">
+ <div class="ds-stat"><div class="ds-sv" id="d-kills">0</div><div class="ds-sl">KILLS</div></div>
+@@ -322,6 +341,8 @@ canvas{display:block;position:absolute;top:0;left:0}
+ 
+ <div class="scr off" id="victory-scr"><h2>ASCENSION</h2>
+ <div class="v-sub">The Void Heart crumbles. Light returns to the citadel. You have conquered the abyss.</div>
++<div id="v-legend" style="font-family:Cinzel,serif;font-size:13px;color:#ffcc00;letter-spacing:4px;margin:6px 0 4px;text-shadow:0 0 20px rgba(255,200,0,0.3)"></div>
++<div id="v-epilogue" style="font-family:Cinzel,serif;font-size:10px;color:rgba(255,220,150,0.4);letter-spacing:1px;margin:4px 0 8px;font-style:italic;line-height:1.6;max-width:400px;margin-left:auto;margin-right:auto"></div>
+ <div id="v-rating"></div>
+ <div class="ds-lbl">FLOOR</div><div class="ds-val" id="v-floor">20</div>
+ <div id="v-time">00:00</div>
+@@ -346,7 +367,22 @@ canvas{display:block;position:absolute;top:0;left:0}
+ <div id="lore-popup"><div class="lore-container"><div class="lore-title" id="lore-title"></div><div class="lore-text" id="lore-text"></div><div class="lore-dismiss">[E / ESC / CLICK] CONTINUE</div></div></div>
+ <div id="relic-overlay"><div class="relic-container"><div class="relic-pick-title">RELIC FOUND</div><div class="relic-cards" id="relic-cards"></div></div></div>
+ <div id="event-overlay" style="position:fixed;top:0;left:0;width:100%;height:100%;display:none;align-items:center;justify-content:center;z-index:25;background:rgba(4,4,12,0.92);backdrop-filter:blur(4px)"><div style="text-align:center;max-width:420px;padding:30px"><div id="event-title" style="font-family:Silkscreen,monospace;font-size:14px;letter-spacing:5px;margin-bottom:6px"></div><div id="event-desc" style="font-family:Cinzel,serif;font-size:11px;color:rgba(200,180,255,0.45);line-height:1.8;font-style:italic;margin-bottom:16px"></div><div id="event-opts" style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap"></div></div></div>
+-<div id="pause-overlay" style="position:fixed;top:0;left:0;width:100%;height:100%;display:none;align-items:center;justify-content:center;z-index:30;background:rgba(4,4,12,0.85);backdrop-filter:blur(6px)"><div style="text-align:center"><div style="font-family:Silkscreen,monospace;font-size:24px;color:#c8a0ff;letter-spacing:8px;margin-bottom:20px;text-shadow:0 0 30px rgba(200,160,255,0.3)">PAUSED</div><div id="pause-stats" style="font-family:'JetBrains Mono',monospace;font-size:9px;color:rgba(200,180,255,0.35);line-height:2.2;letter-spacing:1px"></div><div style="font-family:Silkscreen,monospace;font-size:8px;color:rgba(180,140,255,0.25);margin-top:20px;letter-spacing:3px">[ESC] RESUME</div></div></div>
++<div id="pause-overlay" style="position:fixed;top:0;left:0;width:100%;height:100%;display:none;align-items:center;justify-content:center;z-index:30;background:rgba(4,4,12,0.85);backdrop-filter:blur(6px)"><div style="text-align:center"><div style="font-family:Silkscreen,monospace;font-size:24px;color:#c8a0ff;letter-spacing:8px;margin-bottom:20px;text-shadow:0 0 30px rgba(200,160,255,0.3)">PAUSED</div><div id="pause-stats" style="font-family:'JetBrains Mono',monospace;font-size:9px;color:rgba(200,180,255,0.35);line-height:2.2;letter-spacing:1px"></div><button class="btn" onclick="openSettings()" style="margin-top:12px;font-size:9px;padding:6px 18px">SETTINGS</button><div style="font-family:Silkscreen,monospace;font-size:8px;color:rgba(180,140,255,0.25);margin-top:12px;letter-spacing:3px">[ESC] RESUME</div></div></div>
++<div id="codex-overlay" style="position:fixed;top:0;left:0;width:100%;height:100%;display:none;align-items:center;justify-content:center;z-index:35;background:rgba(4,4,12,0.95);backdrop-filter:blur(8px);overflow-y:auto"><div style="text-align:center;max-width:500px;width:90%;padding:24px"><div style="font-family:Silkscreen,monospace;font-size:18px;color:#c8a0ff;letter-spacing:6px;margin-bottom:16px;text-shadow:0 0 20px rgba(200,160,255,0.3)">CODEX</div>
++<div id="codex-content"></div>
++<button class="btn" onclick="closeCodex()" style="margin-top:14px;font-size:9px;padding:6px 18px">CLOSE</button>
++</div></div>
++<div id="settings-overlay" style="position:fixed;top:0;left:0;width:100%;height:100%;display:none;align-items:center;justify-content:center;z-index:35;background:rgba(4,4,12,0.92);backdrop-filter:blur(8px)"><div style="text-align:center;max-width:400px;width:90%;padding:24px"><div style="font-family:Silkscreen,monospace;font-size:18px;color:#c8a0ff;letter-spacing:6px;margin-bottom:16px;text-shadow:0 0 20px rgba(200,160,255,0.3)">SETTINGS</div>
++<div class="s-row"><label>MASTER VOLUME</label><input type="range" min="0" max="100" id="s-master" oninput="gameSettings.masterVol=this.value/100;saveSettings()"></div>
++<div class="s-row"><label>SFX VOLUME</label><input type="range" min="0" max="100" id="s-sfx" oninput="gameSettings.sfxVol=this.value/100;saveSettings()"></div>
++<div class="s-row"><label>MUSIC VOLUME</label><input type="range" min="0" max="100" id="s-music" oninput="gameSettings.musicVol=this.value/100;saveSettings()"></div>
++<div class="s-row"><label>SCREEN SHAKE</label><select id="s-shake" onchange="gameSettings.shakeIntensity=parseFloat(this.value);saveSettings()"><option value="0">OFF</option><option value="0.5">LOW</option><option value="1">MEDIUM</option><option value="1.5">HIGH</option></select></div>
++<div class="s-row"><label>CRT FILTER</label><input type="checkbox" id="s-crt" onchange="gameSettings.crtEnabled=this.checked;saveSettings()"></div>
++<div class="s-row"><label>PARTICLES</label><select id="s-parts" onchange="gameSettings.particleDensity=parseFloat(this.value);saveSettings()"><option value="0.25">LOW</option><option value="0.6">MEDIUM</option><option value="1">HIGH</option></select></div>
++<div class="s-row"><label>SHOW FPS</label><input type="checkbox" id="s-fps" onchange="gameSettings.showFPS=this.checked;saveSettings()"></div>
++<button class="btn" onclick="closeSettings()" style="margin-top:14px;font-size:9px;padding:6px 18px">BACK</button>
++<div style="margin-top:12px"><button class="btn" onclick="if(confirm('Reset ALL save data?')){localStorage.removeItem('vd_save');localStorage.removeItem('vd_settings');location.reload()}" style="font-size:8px;padding:4px 12px;border-color:rgba(255,50,50,0.3);color:#ff4444">RESET SAVE DATA</button></div>
++</div></div>
+ 
+ <script>
+ 'use strict';
+@@ -355,7 +391,8 @@ canvas{display:block;position:absolute;top:0;left:0}
+    AUDIO ENGINE - Layered synth with spatial panning & ambient loops
+    ═══════════════════════════════════════════════════ */
+ const AC=window.AudioContext||window.webkitAudioContext;let ac,masterGain,reverbNode;
+-function ia(){if(!ac){ac=new AC();masterGain=ac.createGain();masterGain.gain.value=0.6;masterGain.connect(ac.destination);createReverb();startMusic()}}
++function ia(){if(!ac){ac=new AC();masterGain=ac.createGain();masterGain.gain.value=gameSettings.masterVol||0.6;masterGain.connect(ac.destination);createReverb();startMusic()}
++else if(masterGain){masterGain.gain.value=gameSettings.masterVol||0.6}}
+ function createReverb(){reverbNode=ac.createConvolver();const len=ac.sampleRate*1.2,buf=ac.createBuffer(2,len,ac.sampleRate);
+ for(let ch=0;ch<2;ch++){const d=buf.getChannelData(ch);for(let i=0;i<len;i++){d[i]=(Math.random()*2-1)*Math.pow(1-i/len,2.2)}}
+ reverbNode.buffer=buf;const wet=ac.createGain();wet.gain.value=0.18;reverbNode.connect(wet);wet.connect(masterGain)}
+@@ -808,8 +845,8 @@ const RELICS=[
+  f:p=>{p.burnChance=1.0;p.bd+=2}},
+ {name:'PHANTOM CLOAK',desc:'Negate every 8th hit, 2x dash distance',icon:'◇',color:'#88aacc',
+  f:p=>{p.phantomCloak=true;p.hitCounter=0}},
+-{name:'GOLDEN IDOL',desc:'3x gold, shop prices halved',icon:'★',color:'#ffcc00',
+- f:p=>{p.goldMult*=3;p.shopDiscount=true}},
++{name:'GOLDEN IDOL',desc:'2x gold, shop prices -30%',icon:'★',color:'#ffcc00',
++ f:p=>{p.goldMult*=2;p.shopDiscount=0.7}},
+ {name:'SOUL LANTERN',desc:'See HP through fog, +25% XP',icon:'◎',color:'#88ddff',
+  f:p=>{p.soulLantern=true;p.xpMult=1.25}},
+ {name:'CHAOS SEED',desc:'Random weapon each floor',icon:'✧',color:'#ff88cc',
+@@ -1136,21 +1173,11 @@ projs.push({x:e.x,y:e.y,vx:Math.cos(ba4)*3.5,vy:Math.sin(ba4)*3.5,dmg:e.dmg*1.3,
+ // Ambient particles
+ if(fr%2===0){const pa2=Math.random()*Math.PI*2;
+ parts.push({x:e.x+Math.cos(pa2)*40,y:e.y+Math.sin(pa2)*40,vx:-Math.cos(pa2)*1,vy:-Math.sin(pa2)*1,life:15,ml:15,color:'#ffffff',size:1.5,shape:'circle'})}}}
+-};
++}};
+ 
+ /* ═══════════════════════════════════════════════════
+    LORE & STORY DATA
+    ═══════════════════════════════════════════════════ */
+-const FLOOR_LORE=[
+-'Ancient runes pulse with forgotten power...','The walls weep with memories of those who came before...',
+-'Whispers echo from deeper within the void...','The air grows thick with the scent of decay and arcane residue...',
+-'Shadows move of their own accord here...','The stones remember a time before the darkness...',
+-'Something ancient stirs in the depths below...','Lost souls wander these halls, seeking release...',
+-'The boundary between worlds grows thin...','Every step deeper brings you closer to oblivion...',
+-'The void hungers for those who dare descend...','Echoes of fallen warriors linger in the dust...',
+-'The darkness here is alive, watching, waiting...','Time flows differently in the deep places...',
+-'The citadel\'s foundations groan under the weight of ages...','Crystallized memories line the corridor walls...',
+-'The void\'s heartbeat grows louder with each floor...'];
+ 
+ const LORE_TABLETS=[
+ {title:'THE FIRST DESCENT',text:'They sent twelve knights into the void. Only silence returned. Then the whispers began, speaking in voices the living recognized.'},
+@@ -1195,6 +1222,26 @@ const DEATH_EPITAPHS=[
+ 'Rest now, brave delver. The depths will wait for your return.',
+ 'The silence after the last heartbeat is the loudest sound in the void.',
+ 'Your journey ends, but the path remains. Others will follow where you fell.'];
++// v9.0 Procedural legend title generator
++function genLegendTitle(){const adj1=mxCmb>=25?'Relentless':mxCmb>=15?'Furious':kills>=100?'Bloodthirsty':P.parryCount>=10?'Unyielding':tDmg>=2000?'Devastating':P.dmgTaken<20?'Untouchable':flr>=10?'Abyssal':'Wandering';
++const adj2=P.class==='pyromancer'?'Pyromancer':P.class==='shadowblade'?'Shadowblade':P.class==='guardian'?'Guardian':P.class==='stormcaller'?'Stormcaller':P.class==='chronomancer'?'Chronomancer':'Delver';
++const title=P.w&&P.w.evolved?`${adj1} ${adj2}, Bearer of ${P.w.name}`:P.relic?`${adj1} ${adj2}, Wielder of the ${P.relic.name}`:`The ${adj1} ${adj2}`;
++return title}
++// v9.0 Context-aware death epitaphs
++function getDeathEpitaph(){if(P._lastDmgSource){const src=P._lastDmgSource;
++if(src.includes('BOSS')||src.includes('boss'))return `Fell before ${src}. The depths demanded a greater champion.`;
++if(src==='trap')return 'Undone by the dungeon\'s cruel mechanisms. The void needs no monsters to claim the unwary.';
++if(src==='lava')return 'Consumed by the infernal depths. The heat takes all who linger.';
++if(src==='poison'||src==='toxic')return 'The corruption spread too deep. Even the strongest fall to venom\'s patience.';
++if(src==='arena_hazard')return 'Crushed by the arena\'s fury. The boss fight\'s chaos claimed another.';}
++return DEATH_EPITAPHS[Math.floor(Math.random()*DEATH_EPITAPHS.length)]}
++// v9.0 Class-specific victory epilogues
++const VICTORY_EPILOGUES={pyromancer:'The flames you carried into the abyss now burn eternal. Where once the void consumed all light, your fire endures — a beacon for those who dare follow.',
++shadowblade:'You moved through the darkness as one born to it, turning the void\'s own shadows against itself. Now you stand in the light, and even it cannot diminish you.',
++guardian:'Your shield held against the infinite. Where others fell, you stood firm. The void broke upon your resolve like waves upon stone.',
++stormcaller:'Thunder echoed through halls that had known only silence. You brought the storm to the abyss, and the abyss could not weather it.',
++chronomancer:'Time itself bent to your will. You walked between seconds, between heartbeats, between life and death — and chose life.',
++default:'The void recedes. The darkness that seemed infinite now has an end — and you are standing at it.'};
+ const DEATH_TIPS=[
+ 'TIP: Hold SPACE to charge a devastating area attack',
+ 'TIP: Press F to parry — reflects damage at 2x power',
+@@ -1321,11 +1368,16 @@ for(const b of Object.values(vBtns))b.active=false}},{passive:false});
+ /* ═══════════════════════════════════════════════════
+    UTILITY FUNCTIONS — enhanced particles, damage numbers, shockwaves
+    ═══════════════════════════════════════════════════ */
+-function emit(x,y,n,col,spd,life,sz,shape){for(let i=0;i<n;i++){const a=Math.random()*Math.PI*2,s=Math.random()*spd+.2;
++// v9.0 Particle density scaling for performance
++function emit(x,y,n,col,spd,life,sz,shape){const pn=Math.max(1,Math.ceil(n*(gameSettings.particleDensity||1)));
++if(parts.length>600)return;// Hard cap
++for(let i=0;i<pn;i++){const a=Math.random()*Math.PI*2,s=Math.random()*spd+.2;
+ parts.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life,ml:life,color:col,size:sz||2,shape:shape||'rect',grav:0})}}
+-function emitDir(x,y,n,col,dir,spread,spd,life,sz){for(let i=0;i<n;i++){const a=dir+(Math.random()-.5)*spread,s=Math.random()*spd+spd*.3;
++function emitDir(x,y,n,col,dir,spread,spd,life,sz){const pn=Math.max(1,Math.ceil(n*(gameSettings.particleDensity||1)));
++for(let i=0;i<pn;i++){const a=dir+(Math.random()-.5)*spread,s=Math.random()*spd+spd*.3;
+ parts.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life,ml:life,color:col,size:sz||2,shape:'rect'})}}
+-function emitRing(x,y,n,col,spd,life,sz){for(let i=0;i<n;i++){const a=Math.PI*2/n*i,s=spd+Math.random()*.5;
++function emitRing(x,y,n,col,spd,life,sz){const pn=Math.max(1,Math.ceil(n*(gameSettings.particleDensity||1)));
++for(let i=0;i<pn;i++){const a=Math.PI*2/pn*i,s=spd+Math.random()*.5;
+ parts.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life,ml:life,color:col,size:sz||2,shape:'circle'})}}
+ function emitTrail(x,y,col,sz){parts.push({x,y,vx:0,vy:0,life:12,ml:12,color:col,size:sz||1.5,shape:'circle',grav:0})}
+ 
+@@ -1345,19 +1397,47 @@ function showFloorBanner(){const fb=document.getElementById('floor-banner');
+ document.getElementById('fb-name').textContent=bio.name;document.getElementById('fb-name').style.color=bio.ac+'0.5)';
+ document.getElementById('fb-floor').textContent=`FLOOR ${flr}`;document.getElementById('fb-floor').style.color=bio.ac+'0.8)';
+ document.getElementById('fb-sub').textContent=flr%4===0?'⚠ BOSS FLOOR ⚠':'EXPLORE THE DEPTHS';document.getElementById('fb-sub').style.color=bio.ac+'0.3)';
+-document.getElementById('fb-lore').textContent=FLOOR_LORE[Math.floor(Math.random()*FLOOR_LORE.length)];
+-fb.classList.add('show');setTimeout(()=>fb.classList.remove('show'),2800)}
++// v9.0 Biome-specific floor lore
++const bioLoreIdx=Math.floor((flr-1)/3)%FLOOR_LORE.length;const floorLoreSet=FLOOR_LORE[bioLoreIdx];
++const loreIdx=(flr-1)%floorLoreSet.length;
++document.getElementById('fb-lore').textContent=floorLoreSet[loreIdx];
++fb.classList.add('show');setTimeout(()=>fb.classList.remove('show'),3200);
++// v9.0 Floor transition effect
++startTransition('void_consume',80,bio.fl)}
+ 
+ function addCmb(){cmb++;cmbT=P.soulHarvest?140:110;cmbM=1+Math.floor(cmb/3)*.25;if(cmb>mxCmb)mxCmb=cmb;if(cmb>1)sfx('combo');
+ if(cmb===5)streak('FRENZY','#ffcc00');else if(cmb===10)streak('RAMPAGE','#ff8800');else if(cmb===15)streak('UNSTOPPABLE','#ff4400');else if(cmb===25)streak('GODLIKE','#ff0044');else if(cmb===50)streak('BEYOND GOD','#ffffff');
+-// v8.0 combo visual escalation — particles + shockwave + camera at thresholds
+-if(cmb===5){emitRing(P.x,P.y,12,'#ffcc00',3,16,2);addShockwave(P.x,P.y,50,'#ffcc00',8)}
+-else if(cmb===10){emitRing(P.x,P.y,18,'#ff8800',4,20,2.5);addShockwave(P.x,P.y,80,'#ff8800',12);camZoom=1.04;camZoomT=15;flash('#ff8800',0.06)}
++// v9.0 Enhanced combo visual escalation with dramatic milestone effects
++if(cmb===5){emitRing(P.x,P.y,12,'#ffcc00',3,16,2);addShockwave(P.x,P.y,50,'#ffcc00',8);flash('#ffcc00',0.04);
++for(let fp=0;fp<6;fp++)parts.push({x:P.x+(Math.random()-.5)*20,y:P.y,vx:(Math.random()-.5)*1.5,vy:-2-Math.random()*2,life:18,ml:18,color:'#ffcc00',size:2+Math.random()*2,shape:'circle',grav:-0.02})}
++else if(cmb===10){emitRing(P.x,P.y,18,'#ff8800',4,20,2.5);addShockwave(P.x,P.y,80,'#ff8800',12);camZoom=1.04;camZoomT=15;flash('#ff8800',0.08);chromAb=Math.max(chromAb,2);
++addDynLight(P.x,P.y,120,'#ff8800',1.5,0,20);comboEdgeGlow=0.2;
++for(let fp=0;fp<12;fp++){const a=Math.PI*2/12*fp;parts.push({x:P.x+Math.cos(a)*20,y:P.y+Math.sin(a)*20,vx:Math.cos(a)*2,vy:Math.sin(a)*2,life:20,ml:20,color:'#ff8800',size:3,shape:'star'})}}
++else if(cmb===15){emitRing(P.x,P.y,24,'#ff4400',5,24,3);addShockwave(P.x,P.y,100,'#ff4400',14);addShockwave(P.x,P.y,60,'#ffffff',8);
++camZoom=1.06;camZoomT=20;flash('#ff4400',0.1);chromAb=Math.max(chromAb,4);slMo=12;comboEdgeGlow=0.4;
++addDynLight(P.x,P.y,160,'#ff4400',2,0,25);
++for(let fp=0;fp<16;fp++){const a=Math.random()*Math.PI*2;parts.push({x:P.x,y:P.y,vx:Math.cos(a)*3,vy:Math.sin(a)*3,life:24,ml:24,color:Math.random()>.5?'#ff4400':'#ffcc00',size:3+Math.random()*2,shape:'star'})}}
++else if(cmb===25){// GODLIKE — golden pulse + massive shockwaves
++emitRing(P.x,P.y,30,'#ff0044',6,28,3.5);addShockwave(P.x,P.y,150,'#ff0044',20);addShockwave(P.x,P.y,100,'#ffcc00',14);addShockwave(P.x,P.y,50,'#ffffff',8);
++camZoom=1.08;camZoomT=25;flash('#ffffff',0.15);chromAb=8;slMo=20;shk=15;comboEdgeGlow=0.7;hitSt=5;
++addDynLight(P.x,P.y,200,'#ff0044',2.5,0,30);
++for(let fp=0;fp<24;fp++){const a=Math.PI*2/24*fp;const spd=3+Math.random()*2;
++parts.push({x:P.x,y:P.y,vx:Math.cos(a)*spd,vy:Math.sin(a)*spd,life:30,ml:30,color:['#ffffff','#ffcc00','#ff0044','#ff8800'][fp%4],size:3+Math.random()*3,shape:fp%3===0?'star':'circle'})}}
++else if(cmb===50){// BEYOND GOD — reality-breaking effects
++emitRing(P.x,P.y,40,'#ffffff',8,32,4);addShockwave(P.x,P.y,200,'#ffffff',24);addShockwave(P.x,P.y,140,'#ff0044',18);addShockwave(P.x,P.y,80,'#ffcc00',12);
++camZoom=1.12;camZoomT=35;flash('#ffffff',0.25);chromAb=15;slMo=30;shk=25;hitSt=8;comboEdgeGlow=1;
++addDynLight(P.x,P.y,300,'#ffffff',3,0,40);
++for(let sl=0;sl<16;sl++){const a=Math.PI*2/16*sl;parts.push({x:P.x,y:P.y,vx:Math.cos(a)*1,vy:Math.sin(a)*1,life:20,ml:20,color:'#ffffff',size:40+Math.random()*30,shape:'speedline',slashDir:a,lineW:2})}
++for(let fp=0;fp<40;fp++){const a=Math.random()*Math.PI*2;const spd=2+Math.random()*4;
++parts.push({x:P.x,y:P.y,vx:Math.cos(a)*spd,vy:Math.sin(a)*spd,life:40,ml:40,color:['#ffffff','#ffcc00','#ff0044','#88ccff'][fp%4],size:2+Math.random()*4,shape:fp%4===0?'star':'circle'})}}
+ else if(cmb>=15&&cmb%5===0){emitRing(P.x,P.y,24,'#ff4400',5,24,3);addShockwave(P.x,P.y,100,'#ff4400',14);camZoom=1.06;camZoomT=20;flash('#ff4400',0.08);chromAb=Math.max(chromAb,3);comboEdgeGlow=Math.min(1,cmb*0.03)}
+ const cd=document.getElementById('combo-display');if(cmb>1){cd.classList.add('show');
+ const cc=document.getElementById('combo-count');cc.textContent=cmb;
+-// v6 combo color escalation: yellow → orange → red → white
+-const cCol=cmb>=25?'#ffffff':cmb>=15?'#ff2244':cmb>=10?'#ff6600':cmb>=5?'#ff9900':'#ffcc00';
++// v9.0 combo pop bounce on each increment
++cc.classList.remove('pop');void cc.offsetWidth;cc.classList.add('pop');
++// v6 combo color escalation: yellow → orange → red → white (v9.0: spectrum shift at 30+)
++let cCol;if(cmb>=30){const hue=(fr*3+cmb*12)%360;cCol=`hsl(${hue},100%,75%)`}
++else{cCol=cmb>=25?'#ffffff':cmb>=15?'#ff2244':cmb>=10?'#ff6600':cmb>=5?'#ff9900':'#ffcc00'}
+ cc.style.color=cCol;cc.style.textShadow=`0 0 20px ${cCol}99,0 0 40px ${cCol}55`;
+ cc.style.fontSize=Math.min(60,40+cmb*0.5)+'px';
+ document.getElementById('combo-mult').textContent=`x${cmbM.toFixed(1)}`;document.getElementById('combo-mult').style.color=cCol}}
+@@ -1588,20 +1668,20 @@ combo5:{text:'COMBO MASTER',check:()=>cmb>=5},
+ combo15:{text:'UNSTOPPABLE FORCE',check:()=>cmb>=15},
+ floor3:{text:'DEEP DELVER',check:()=>flr>=3},
+ floor5:{text:'VOID VETERAN',check:()=>flr>=5},
+-boss_kill:{text:'BOSS SLAYER',check:()=>false},
+-secret:{text:'HIDDEN KNOWLEDGE',check:()=>false},
++boss_kill:{text:'BOSS SLAYER',check:()=>false},/* triggered via triggerAchievement */
++secret:{text:'HIDDEN KNOWLEDGE',check:()=>rmsV>=15},
+ parry3:{text:'DEFLECTOR',check:()=>P.parryCount>=3},
+ forge3:{text:'MASTERSMITH',check:()=>P.forgesUsed>=3},
+ synergy1:{text:'SYNERGIST',check:()=>P.synergies.length>=1}
+ // v6 additional achievements
+-,stagger_boss:{text:'STUN LOCK',check:()=>false},
++,stagger_boss:{text:'STUN LOCK',check:()=>false},/* triggered via triggerAchievement */
+ floor8:{text:'ABYSS WALKER',check:()=>flr>=8},
+ combo25:{text:'BEYOND MORTAL',check:()=>cmb>=25},
+-revive:{text:'SECOND CHANCE',check:()=>false},
+-all_classes:{text:'PATH WALKER',check:()=>false},
+-void_rank1:{text:'VOID CHALLENGER',check:()=>false},
+-event_shrine:{text:'ALTAR SEEKER',check:()=>false},
+-streak3:{text:'PERSISTENT',check:()=>false}
++revive:{text:'SECOND CHANCE',check:()=>false},/* triggered via triggerAchievement */
++all_classes:{text:'PATH WALKER',check:()=>{try{return saveData.runHistory&&new Set(saveData.runHistory.map(r=>r.cls)).size>=5}catch(e){return false}}},
++void_rank1:{text:'VOID CHALLENGER',check:()=>activeVoidRank>=1},
++event_shrine:{text:'ALTAR SEEKER',check:()=>false},/* triggered via triggerAchievement */
++streak3:{text:'PERSISTENT',check:()=>saveData&&saveData.runStreak>=3}
+ };let achvShown={};
+ function checkAchievements(){for(const[k,a]of Object.entries(ACHVS)){if(!achvShown[k]&&a.check()){achvShown[k]=1;showAchievement(a.text);saveAchievement(k)}}}
+ function triggerAchievement(key){if(!achvShown[key]&&ACHVS[key]){achvShown[key]=1;showAchievement(ACHVS[key].text);saveAchievement(key)}}
+@@ -1724,6 +1804,7 @@ return`${parseInt(h.substr(0,2),16)},${parseInt(h.substr(2,2),16)},${parseInt(h.
+    ═══════════════════════════════════════════════════ */
+ function drawCRT(){
+ crt.clearRect(0,0,W,H);
++if(!gameSettings.crtEnabled)return;
+ // v8.0 enhanced pseudo-bloom: multi-pass glow
+ if(gSt==='playing'||gSt==='dead'||gSt==='victory'){crt.globalCompositeOperation='lighter';
+ crt.globalAlpha=0.06;crt.drawImage(gc,0,0);
+@@ -2198,6 +2279,12 @@ return items}
+ 
+ function loadRoom(){ents=[];projs=[];picks=[];props=[...cR.barrels.map(b=>({...b}))];
+ dynLights=[];bloodSplats=[];waveActive=false;waveNum=0;
++// v9.0 Remove previous room modifier and roll new one
++if(curRoomMod&&curRoomMod.remove)curRoomMod.remove();curRoomMod=null;
++if(!cR.cleared&&flr>=2){const mod=rollRoomMod();if(mod){curRoomMod=mod;
++setTimeout(()=>{if(curRoomMod){curRoomMod.apply();
++msg(`${mod.icon} ${mod.name}<br><span style="font-size:8px;color:${mod.color}">${mod.desc}</span>`,1500);
++sfx('event_ambient')}},400)}}
+ // v7.0 Chaos Gem: random buff each room
+ if(P.chaosGem){const chaosBufNames=['spd','bd','cc','arm'];const cbKey=chaosBufNames[Math.floor(Math.random()*chaosBufNames.length)];
+ if(P.chaosRoomBuff){P[P.chaosRoomBuff.key]-=P.chaosRoomBuff.val}
+@@ -2216,21 +2303,20 @@ ents.push(e)}}
+ // Lore tablet pickup
+ if(cR.loreTablet&&!cR._loreSpawned){cR._loreSpawned=true;
+ picks.push({x:RPX/2+(Math.random()-.5)*80,y:RPY/2+(Math.random()-.5)*60,type:'lore',tablet:cR.loreTablet,life:9999})}
+-// Boss intro with lore
++// v9.0 Boss intro with full cinematic
+ if(cR.type==='boss'&&ents.length){const bIdx2=flr>=20?5:Math.floor((flr/4-1)%5);
+-setBossMusic(true,Math.max(0,bIdx2));const bl=BOSS_LORE[Math.max(0,bIdx2)];
+-bossIntroT=120;bossIntroTarget=ents[0];
+-for(const e of ents)e.inv=120; // boss invulnerable during intro
+-setTimeout(()=>{
+-// Cinematic intro
++const bl=BOSS_LORE[Math.max(0,bIdx2)];
++for(const e of ents)e.inv=200; // boss invulnerable during intro
++playBossIntro(Math.max(0,bIdx2));
++// Dramatic particles after cinematic ends
++setTimeout(()=>{if(gSt==='playing'&&ents.length){
+ msg(`⚠ ${bl.name} ⚠<br><span style="font-size:8px;color:rgba(255,180,200,0.4)">${bl.desc}</span>`,2500);
+ sfx('boss_intro');shk=15;flash('#ff2255',.25);chromAb=5;slMo=Math.max(slMo,40);
+ camZoom=1.1;camZoomT=60;
+-// Dramatic particles
+ for(let i=0;i<50;i++){const a=Math.random()*Math.PI*2;const d=20+Math.random()*60;
+ parts.push({x:ents[0].x+Math.cos(a)*d,y:ents[0].y+Math.sin(a)*d,vx:Math.cos(a)*1.5,vy:Math.sin(a)*1.5-1,life:40+Math.random()*20,ml:60,color:bl.color,size:2+Math.random()*3,shape:Math.random()>.5?'star':'circle',grav:0.05})}
+ addShockwave(ents[0].x,ents[0].y,200,bl.color,30);addShockwave(ents[0].x,ents[0].y,100,'#ffffff',20);
+-addDynLight(ents[0].x,ents[0].y,250,bl.color,2,0,30)},200)}
++addDynLight(ents[0].x,ents[0].y,250,bl.color,2,0,30)}},3200)}
+ // v5 challenge waves
+ if(cR.type==='challenge'&&!cR.cleared){waveActive=true;waveNum=1;waveMax=3;wavePause=60;
+ msg('CHALLENGE ROOM — WAVE 1/3',1000);flash('#ff8800',.1);sfx('wave')}
+@@ -2247,7 +2333,8 @@ showDialogue('LOST SPIRIT',GHOST_DIALOGUE[Math.floor(Math.random()*GHOST_DIALOGU
+ /* ═══════════════════════════════════════════════════
+    ENTITY FACTORY - 12 enemy types + boss + 4 mini-bosses
+    ═══════════════════════════════════════════════════ */
+-function mkE(type,x,y){const b={x,y,vx:0,vy:0,inv:0,atkCd:0,dir:0,age:0,fl:0,burnT:0,frozen:0,telG:0,_uid:Math.random()*99999|0,
++function mkE(type,x,y){if(type!=='boss')recordEnemy(type); // v9.0 codex tracking
++const b={x,y,vx:0,vy:0,inv:0,atkCd:0,dir:0,age:0,fl:0,burnT:0,frozen:0,telG:0,_uid:Math.random()*99999|0,
+ statuses:[],armor:0,shield:0,slowMult:1,state:'idle',stateT:0,animT:0,
+ // v5 additions
+ hitStop:0,stretchDir:0,stretchT:0,animState:'idle',animFrame:0,animTimer:0,spawnDone:true,alpha:1};const f=flr;
+@@ -2329,6 +2416,7 @@ if(cR.roomEvent&&!cR.roomEvent.used&&Math.abs(P.x-cR.roomEvent.x)<TS*1.5&&Math.a
+    SHOP & FORGE SYSTEMS
+    ═══════════════════════════════════════════════════ */
+ function openShop(){gSt='shop';rShop();document.getElementById('shop-overlay').classList.add('show');
++showHint('firstShop','Press E to trade with merchants');
+ if(!cR.merchantSpoken){cR.merchantSpoken=true;
+ showDialogue('MERCHANT',MERCHANT_LINES[Math.floor(Math.random()*MERCHANT_LINES.length)],'#ffcc44')}}
+ function closeShop(){gSt='playing';document.getElementById('shop-overlay').classList.remove('show')}
+@@ -2644,6 +2732,9 @@ if(cls.passiveKey==='shieldBash'){P.shieldBash=true;P.maxShield+=5;P.shield=5;P.
+ if(cls.passiveKey==='timeDilation'){P.timeDilation=true;P.timeDilationCount=0}
+ // v7.0 Apply meta-progression upgrades
+ applyMetaUpgrades();
++// v9.0 Apply active curses
++curseScoreMult=activeCurses.reduce((m,c)=>m*c.scoreMult,1);
++for(const curse of activeCurses)curse.apply(P);
+ displayHP=P.hp;
+ document.getElementById('class-scr').classList.add('off');
+ document.getElementById('class-hud').innerHTML=`<span style="color:${cls.color}">${cls.icon} ${cls.name}</span>`;
+@@ -2691,22 +2782,35 @@ if(saveData&&saveData.unlocks&&saveData.unlocks.bonus_gold)gold+=25;
+ document.getElementById('title-scr').classList.add('off');document.getElementById('death-scr').classList.add('off');document.getElementById('victory-scr').classList.add('off');
+ document.getElementById('combo-display').classList.remove('show');
+ document.getElementById('relic-hud').textContent='';
+-gSt='classSelect';initClassSelect();document.getElementById('class-scr').classList.remove('off')}
++gSt='classSelect';initClassSelect();
++// v9.0 Show curse panel + render curse toggles
++document.getElementById('curse-panel').style.display='block';renderCursePanel();
++document.getElementById('class-scr').classList.remove('off')}
+ 
+ function calcRating(){
+ let score=flr*100+kills*10+mxCmb*15+Math.floor(tDmg)+tGold;
+ if(runTime>0)score+=Math.floor(Math.max(0,1000-runTime*2));
++score=Math.floor(score*curseScoreMult); // v9.0 curse score multiplier
+ return{score,grade:score>=3000?'S':score>=2000?'A':score>=1200?'B':score>=600?'C':'D',
+ color:score>=3000?'#ffcc00':score>=2000?'#44ff66':score>=1200?'#44ccff':score>=600?'#c8a0ff':'#ff6666'}}
+ 
+ function die(){
+-// v7.0 Chrono Loop: rewind on death
++// v7.0 Chrono Loop: rewind on death — v9.0 enhanced visual rewind
+ if(P.chronoLoop&&!P.chronoUsed&&P.chronoSnaps.length>0){P.chronoUsed=true;
++const deathX=P.x,deathY=P.y;
+ const snap=P.chronoSnaps[P.chronoSnaps.length-1];P.x=snap.x;P.y=snap.y;P.hp=Math.max(snap.hp,3);P.shield=snap.shield;P.inv=60;
+-emitRing(P.x,P.y,30,'#00ccff',5,30,3);flash('#00ccff',.3);shk=15;chromAb=6;
++emitRing(P.x,P.y,30,'#00ccff',5,30,3);flash('#00ccff',.3);shk=15;chromAb=8;slMo=25;hitSt=15;
++addShockwave(deathX,deathY,100,'#00ccff',16);addShockwave(P.x,P.y,80,'#00ffff',12);
+ msg('TIME REWIND!',1200);sfx('revive');addDynLight(P.x,P.y,200,'#00ccff',2,0,25);
+-for(let tp=0;tp<20;tp++){const ta=Math.random()*Math.PI*2;
+-parts.push({x:P.x+Math.cos(ta)*30,y:P.y+Math.sin(ta)*30,vx:Math.cos(ta+Math.PI)*2,vy:Math.sin(ta+Math.PI)*2,life:30,ml:30,color:'#00ccff',size:2,shape:'circle'})}
++// Rewind trail from death position to snap position
++const rwDist=Math.hypot(P.x-deathX,P.y-deathY);const rwAng=Math.atan2(P.y-deathY,P.x-deathX);
++for(let tp=0;tp<30;tp++){const t=tp/30;const rx=deathX+Math.cos(rwAng)*rwDist*t,ry=deathY+Math.sin(rwAng)*rwDist*t;
++parts.push({x:rx+(Math.random()-.5)*10,y:ry+(Math.random()-.5)*10,vx:(Math.random()-.5)*1,vy:-1-Math.random(),
++life:15+tp*.5,ml:30,color:Math.random()>.3?'#00ccff':'#88eeff',size:2+Math.random()*2,shape:'circle',grav:-0.02})}
++// Clock-like particles spinning inward
++for(let cp=0;cp<12;cp++){const ca=Math.PI*2/12*cp;
++parts.push({x:P.x+Math.cos(ca)*40,y:P.y+Math.sin(ca)*40,vx:Math.cos(ca+Math.PI)*3,vy:Math.sin(ca+Math.PI)*3,
++life:20,ml:20,color:'#00ffff',size:3,shape:'diamond'})}
+ P.chronoSnaps=[];return}
+ // v8.0 Phoenix Blade passive: revive from ashes
+ if(P.w&&P.w.evoPassive==='phoenix'&&!P.phoenixUsed){P.phoenixUsed=true;P.hp=Math.ceil(P.mhp*0.4);P.inv=90;
+@@ -2738,7 +2842,17 @@ document.getElementById('d-weapon').textContent=P.w?P.w.n:'FISTS';
+ // v6.1 staggered stat reveal animations
+ const dStats=document.querySelectorAll('#death-scr .ds-stat');
+ dStats.forEach((s,i)=>{s.style.animationDelay=`${0.4+i*0.1}s`});
+-document.getElementById('d-epitaph').textContent=DEATH_EPITAPHS[Math.floor(Math.random()*DEATH_EPITAPHS.length)];
++document.getElementById('d-epitaph').textContent=getDeathEpitaph();
++// v9.0 Legend title + Cause of death
++document.getElementById('d-legend').textContent=genLegendTitle();
++{const cause=P._lastDmgSource;let causeText='';
++if(cause==='trap')causeText='CAUSE OF DEATH: TRAP';
++else if(cause==='lava')causeText='CAUSE OF DEATH: LAVA';
++else if(cause==='projectile')causeText='CAUSE OF DEATH: ENEMY PROJECTILE';
++else if(cause==='arena_hazard')causeText='CAUSE OF DEATH: ARENA HAZARD';
++else if(cause)causeText=`SLAIN BY: ${cause}`;
++else causeText='CONSUMED BY THE VOID';
++document.getElementById('d-cause').textContent=causeText}
+ document.getElementById('d-rating').textContent=rating.grade;
+ document.getElementById('d-rating').style.color=rating.color;
+ // v5.1 encouragement tip + run highlights
+@@ -2832,6 +2946,9 @@ const eased=1-Math.pow(1-p,3);el.textContent=Math.floor(eased*target);
+ if(p<1)requestAnimationFrame(animCounter);else el.textContent=target})()}
+ document.getElementById('v-rating').textContent=vGrade;
+ document.getElementById('v-rating').style.color=vColor;
++// v9.0 Legend title + class-specific epilogue
++document.getElementById('v-legend').textContent=genLegendTitle();
++document.getElementById('v-epilogue').textContent=VICTORY_EPILOGUES[P.class]||VICTORY_EPILOGUES.default;
+ const vhl=[];
+ if(P.highestHit>15)vhl.push(`Best Hit: ${P.highestHit}`);
+ if(mxCmb>5)vhl.push(`Peak Combo: ${mxCmb}x`);
+@@ -2933,22 +3050,53 @@ for(const e of ents){if(Math.hypot(e.x-pr.x,e.y-pr.y)<TS*2){e.frozen=Math.max(e.
+ else{if(Math.random()<.4)picks.push({x:pr.x,y:pr.y,type:'gold',val:3+~~(Math.random()*6),life:350,vy:-1,vx:(Math.random()-.5)*2});
+ if(Math.random()<.12&&P.hp<P.mhp)picks.push({x:pr.x,y:pr.y,type:'heal',val:1,life:350,vy:-1})}
+ props.splice(i,1)}}}
+-// v5 slash trail points
+-const arcSize=[.8,.9,1.2][cStep];
++// v9.0 Weapon-type-specific attack visuals
++const arcSize=[.8,.9,1.2][cStep];const wn2=w.name||'';
++if(wn2.includes('AXE')||wn2.includes('MACE')||wn2.includes('HAMMER')){// Heavy slam — wide arc + ground crack on finisher
++const heavyArc=arcSize*1.4;for(let i=0;i<7;i++){const a=P.dir-heavyArc+heavyArc*2*(i/6);const d=wR()*.5+i*4;
++addTrailPoint(P.x+Math.cos(a)*d,P.y+Math.sin(a)*d,a,w.c||'#cc8844')}
++if(cStep===2){const ix=P.x+Math.cos(P.dir)*wR()*.7,iy=P.y+Math.sin(P.dir)*wR()*.7;
++for(let cr=0;cr<5;cr++){const ca=P.dir+(Math.random()-.5)*1.2;
++parts.push({x:ix,y:iy,vx:Math.cos(ca)*0.3,vy:Math.sin(ca)*0.3,life:18,ml:18,color:'#aa8866',size:10+Math.random()*15,shape:'slash',slashDir:ca,lineW:1.5})}
++emit(ix,iy,8,'#ddaa66',3,12,2)}}
++else if(wn2.includes('DAGGER')||wn2.includes('RAPIER')||wn2.includes('KNIFE')){// Rapid stabs + speed lines
++const stabDir=cStep%2===0?P.dir+0.15:P.dir-0.15;
++for(let i=0;i<4;i++){const d=wR()*(.3+i*.2);addTrailPoint(P.x+Math.cos(stabDir)*d,P.y+Math.sin(stabDir)*d,stabDir,w.c||'#ffffff')}
++for(let sl=0;sl<3;sl++){const sa=P.dir+Math.PI+(Math.random()-.5)*.4;
++parts.push({x:P.x+Math.cos(sa)*5,y:P.y+Math.sin(sa)*5,vx:Math.cos(sa)*2,vy:Math.sin(sa)*2,life:5,ml:5,color:'#ffffff',size:12+Math.random()*8,shape:'speedline',slashDir:sa,lineW:1})}}
++else if(wn2.includes('SCYTHE')){// Wide sweep with afterglow
++const scyArc=arcSize*1.6;for(let i=0;i<9;i++){const a=P.dir-scyArc+scyArc*2*(i/8);const d=wR()*.4+i*3.5;
++addTrailPoint(P.x+Math.cos(a)*d,P.y+Math.sin(a)*d,a,w.c||'#ff44aa')}
++for(let i=0;i<5;i++){const a=P.dir-scyArc+scyArc*2*(i/4);const d=wR()*.7;
++emit(P.x+Math.cos(a)*d,P.y+Math.sin(a)*d,1,w.c||'#ff44aa',1.5,14,2,'circle')}}
++else if(wn2.includes('FLAME')||wn2.includes('FIRE')||wn2.includes('EMBER')){// Fire sweep
++for(let i=0;i<6;i++){const a=P.dir-arcSize+arcSize*2*(i/5);const d=wR()*.5+i*3;
++addTrailPoint(P.x+Math.cos(a)*d,P.y+Math.sin(a)*d,a,'#ff6633')}
++for(let f=0;f<5;f++){const a=P.dir+(Math.random()-.5)*arcSize*2;const d=wR()*(.3+Math.random()*.5);
++parts.push({x:P.x+Math.cos(a)*d,y:P.y+Math.sin(a)*d,vx:Math.cos(a)+Math.random(),vy:-1.5-Math.random()*2,
++life:14,ml:14,color:Math.random()>.5?'#ff6633':'#ffaa22',size:2+Math.random()*2,shape:'circle',grav:-0.02})}}
++else if(wn2.includes('VOID')||wn2.includes('CELESTIAL')){// Void energy arc
++for(let i=0;i<6;i++){const a=P.dir-arcSize+arcSize*2*(i/5);const d=wR()*.5+i*3;
++addTrailPoint(P.x+Math.cos(a)*d,P.y+Math.sin(a)*d,a,'#bb66ff')}
++if(cStep===2)emitRing(P.x+Math.cos(P.dir)*wR()*.5,P.y+Math.sin(P.dir)*wR()*.5,8,'#bb66ff',2,12,1.5)}
++else{// Default slash trail
+ for(let i=0;i<5;i++){const a=P.dir-arcSize+arcSize*2*(i/4);const d=wR()*.6+i*3;
+-addTrailPoint(P.x+Math.cos(a)*d,P.y+Math.sin(a)*d,a,w.c||'rgba(200,170,255,0.6)')}
++addTrailPoint(P.x+Math.cos(a)*d,P.y+Math.sin(a)*d,a,w.c||'rgba(200,170,255,0.6)')}}
+ const swingColors=[w.c||'rgba(200,170,255,0.6)',w.c||'rgba(200,170,255,0.4)'];
+ for(let i=0;i<7;i++){const a=P.dir+(Math.random()-.5)*(cStep===2?1.6:1),d=wR()*(.4+Math.random()*.6);
+ emit(P.x+Math.cos(a)*d,P.y+Math.sin(a)*d,1,swingColors[i%2],1.2,9,1.5+cStep*.3)}}
+-// v7.0 Echo Amulet: every 5th attack fires ghost projectile copy
+-if(P.echoAmulet){P.echoCount++;if(P.echoCount%5===0){
++// v7.0 Echo Amulet: every 5th attack fires ghost copy (v9.0: 60-frame cooldown cap)
++if(P.echoAmulet){P.echoCount++;if(!P.echoCd)P.echoCd=0;
++if(P.echoCount%5===0&&fr-P.echoCd>=60){P.echoCd=fr;
+ const ga=P.dir;projs.push({x:P.x+Math.cos(ga)*10,y:P.y+Math.sin(ga)*10,vx:Math.cos(ga)*3.5,vy:Math.sin(ga)*3.5,
+ dmg:wD()*0.5,life:50,color:'rgba(180,160,255,0.6)',size:4,enemy:0,pierce:1});
+ emit(P.x,P.y,6,'#c8a0ff',2,10,1.5);ft(P.x,P.y-20,'ECHO','#c8a0ff')}}
+-// v7.0 Chaos Gem: random status on attack hit
++// v7.0 Chaos Gem: random status on attack hit — v9.0 visual indicator
+ if(P.chaosGem&&w.t==='m'){for(const e of ents){if(e.animState!=='die'&&Math.hypot(e.x-P.x,e.y-P.y)<wR()+Math.max(e.hw,e.hh)){
+ const chaosStatuses=['burn','freeze','poison','bleed','slow'];
+-if(Math.random()<0.25)applyStatus(e,chaosStatuses[Math.floor(Math.random()*chaosStatuses.length)],50);break}}}}
++const chaosColors={'burn':'#ff6633','freeze':'#88ccff','poison':'#66ff44','bleed':'#ff3366','slow':'#aa88cc'};
++if(Math.random()<0.25){const cs=chaosStatuses[Math.floor(Math.random()*chaosStatuses.length)];
++applyStatus(e,cs,50);P._chaosAuraColor=chaosColors[cs];P._chaosAuraT=20}break}}}}
+ 
+ /* ═══════════════════════════════════════════════════
+    HURT / KILL — v5 per-entity hit-stop, multi-kill, status combos
+@@ -2996,6 +3144,22 @@ if(wn.includes('AXE')||wn.includes('MACE')){shk=Math.min(25,dmg*1.6+(crit?8:0));
+ else if(wn.includes('DAGGER')||wn.includes('RAPIER')){for(let s=0;s<3;s++){const sa=dir+(Math.random()-.5)*.6;emitDir(e.x,e.y,2,'#ffffff',sa,.2,4,6,1)}}
+ else if(wn.includes('SCYTHE')){emit(e.x,e.y,3,'#ff44aa',2,16,1.5,'circle')}
+ else if(wn.includes('VOID')){emitRing(e.x,e.y,6,'#bb66ff',2,10,1)}
++// v9.0 Manga-style directional speed lines on ALL hits
++const slN=crit?8:4;for(let sl=0;sl<slN;sl++){const slA=dir+(Math.random()-.5)*(crit?.6:.4);
++parts.push({x:e.x+Math.cos(slA)*8,y:e.y+Math.sin(slA)*8,vx:Math.cos(slA)*3,vy:Math.sin(slA)*3,
++life:crit?8:5,ml:crit?8:5,color:crit?'#ffee88':'#ffffff',size:15+Math.random()*20,shape:'speedline',slashDir:slA,lineW:crit?2:1.2})}
++// v9.0 CRITICAL! text with cross-slash
++if(crit&&dmg>=3){ft(e.x,e.y-30,'CRITICAL!','#ffcc00',1.8);
++const xLen=25+dmg*2;parts.push({x:e.x,y:e.y,vx:0,vy:0,life:8,ml:8,color:'#ffee44',size:xLen,shape:'slash',slashDir:dir+Math.PI/4,lineW:3});
++parts.push({x:e.x,y:e.y,vx:0,vy:0,life:8,ml:8,color:'#ffee44',size:xLen,shape:'slash',slashDir:dir-Math.PI/4,lineW:3})}
++// v9.0 Elemental hit sparks for status weapons
++if(P.w){if(P.w.burn||P.burnChance>0){for(let f=0;f<3;f++)parts.push({x:e.x+(Math.random()-.5)*10,y:e.y,
++vx:(Math.random()-.5)*1.5,vy:-1.5-Math.random()*2,life:12+Math.random()*8,ml:20,
++color:Math.random()>.5?'#ff6633':'#ffaa22',size:2+Math.random()*2,shape:'circle',grav:-0.03})}
++if(P.w.freeze){for(let ic=0;ic<4;ic++){const ia=Math.random()*Math.PI*2;
++parts.push({x:e.x+Math.cos(ia)*8,y:e.y+Math.sin(ia)*8,vx:Math.cos(ia)*1.5,vy:Math.sin(ia)*1.5,
++life:12,ml:12,color:'#88ccff',size:2+Math.random()*2,shape:'diamond',grav:0.04})}}
++if(P.w.poison){emit(e.x,e.y,crit?4:2,'#66ff44',1.5,12,1.5,'circle')}}
+ // v8.0 Ground slam passive (Worldsplitter)
+ if(P.w&&P.w.evoPassive==='groundslam'&&crit){addShockwave(e.x,e.y,60,'#ff8800',10);
+ for(const oe of ents){if(oe!==e&&oe.animState!=='die'&&Math.hypot(oe.x-e.x,oe.y-e.y)<60){hrtE(oe,P.bd*0.3,false,Math.atan2(oe.y-e.y,oe.x-e.x))}}}
+@@ -3024,6 +3188,8 @@ function killE(e,i){const isLast=ents.length===1;
+ // v5 death animation instead of instant removal
+ e.animState='die';e.animFrame=0;e.animTimer=0;
+ typedDeathBurst(e);sfxL('kill',e.x);kills++;addCmb();
++// v9.0 codex tracking
++if(e.type==='boss')recordBossKill(e.bossName||'UNKNOWN');else recordEnemyKill(e.type);
+ // v8.0 Weapon evolution kill tracking
+ weaponKillCount++;checkWeaponEvolution();
+ // v8.0 Evolved weapon passive abilities on kill
+@@ -3170,6 +3336,13 @@ return bestAng}
+    MAIN UPDATE LOOP — v5 enhanced
+    ═══════════════════════════════════════════════════ */
+ function update(dt){if(gSt!=='playing')return;
++// v9.0 Boss intro cinematic blocks gameplay
++if(bossIntroActive){updateBossIntro(dt);return}
++// v9.0 Update weather + FPS
++updateWeather(dt);updateFPS();updateHint();
++// v9.0 Tutorial hints
++if(ents.length>0&&!tutorialHints.firstEnemy)showHint('firstEnemy','SPACE or CLICK to attack | F to parry');
++if(P.hp<P.mhp*0.4&&P.hp>0&&!tutorialHints.firstLowHP)showHint('firstLowHP','Find green pickups to heal!');
+ // v5: per-entity hit-stop replaces global for normal combat. Keep global for boss kill/death only.
+ if(hitSt>0){hitSt-=dt;return}
+ // v5.1 iris-wipe floor transition
+@@ -3261,7 +3434,7 @@ const ptx=Math.floor(P.x/TS),pty=Math.floor(P.y/TS);
+ if(ptx>=0&&ptx<RW&&pty>=0&&pty<RH&&cR.tiles[pty][ptx]===3&&bio.hazard){const hz=bio.hazard;
+ if(hz.type==='spore'&&P.inv<=0&&fr%30===0){applyStatus(P,'poison',hz.dur);emit(P.x,P.y,3,'#66ff44',1,10,1)}
+ if(hz.type==='lava'&&P.inv<=0){if(!P._lavaTick)P._lavaTick=0;P._lavaTick-=sdt;
+-if(P._lavaTick<=0){P._lavaTick=hz.tickRate;P.hp-=hz.dmg;P.dmgTaken+=hz.dmg;ft(P.x,P.y-14,`-${hz.dmg}`,'#ff6633');emit(P.x,P.y,4,'#ff4400',1.5,8,1.5);sfx('hurt');if(P.hp<=0){die();return}}}
++if(P._lavaTick<=0){P._lavaTick=hz.tickRate;P.hp-=hz.dmg;P.dmgTaken+=hz.dmg;P._lastDmgSource='lava';ft(P.x,P.y-14,`-${hz.dmg}`,'#ff6633');emit(P.x,P.y,4,'#ff4400',1.5,8,1.5);sfx('hurt');if(P.hp<=0){die();return}}}
+ if(hz.type==='ice'){P.vx*=1.02;P.vy*=1.02}
+ }
+ // v5.1 gravity wells (void biome)
+@@ -3297,7 +3470,7 @@ if(P.inv<=0&&Math.abs(P.x-tx)<TS*.4&&Math.abs(P.y-ty)<TS*.4){
+ if(P.relic&&P.relic.name==='PHANTOM CLOAK'&&P.phantomCount>=8){P.phantomCount=0;P.inv=20;ft(P.x,P.y-14,'PHASED','#88ccff');emit(P.x,P.y,8,'#88ccff',2,10,1.5);continue}
+ let raw=Math.max(1,(trap.type==='fire'?3:2)-P.arm);
+ if(P.shield>0){const abs=Math.min(P.shield,raw);P.shield-=abs;raw-=abs}
+-if(raw>0){P.hp-=raw;P.dmgTaken+=raw;ft(P.x,P.y-14,`-${raw}`,'#ff3366')}
++if(raw>0){P.hp-=raw;P.dmgTaken+=raw;ft(P.x,P.y-14,`-${raw}`,'#ff3366');P._lastDmgSource='trap'}
+ P.inv=28;shk=4;emit(P.x,P.y,8,'#ff3366',2,12,1.5);sfx('hurt');flash('#ff0000',.08);chromAb=2;if(P.hp<=0){die();return}}
+ for(const e of ents){if(Math.abs(e.x-tx)<TS*.4&&Math.abs(e.y-ty)<TS*.4&&e.inv<=0){e.hp-=1;e.inv=20;emit(e.x,e.y,3,'#ff3366',1,8,1)}}
+ if(fr%4===0)emit(tx+(Math.random()-.5)*TS*.3,ty+(Math.random()-.5)*TS*.3,1,trap.type==='fire'?'#ff6633':'#ff4466',.5,8,1.5)}}
+@@ -3326,6 +3499,12 @@ if(e.spawnDelay>0){e.spawnDelay-=sdt;continue}
+ if(e.animState==='spawn'&&!e.spawnDone){animTick(e,sdt);e.alpha=Math.min(1,e.alpha+0.08*sdt);continue}
+ // v5 death animation
+ if(e.animState==='die'){animTick(e,sdt);if(e._dead){ents.splice(i,1)}continue}
++// v9.0 Environmental kill check
++if(checkEnvironmentalDmg(e,sdt)){if(e.hp<=0){
++// v9.0 Volatile room mod: explode on death
++if(P._volatileRoom){emit(e.x,e.y,16,'#ffaa00',5,16,3);addShockwave(e.x,e.y,50,'#ffaa00',12);sfx('smash');
++for(const e2 of ents){if(e2!==e&&Math.hypot(e2.x-e.x,e2.y-e.y)<50){e2.hp-=3;ft(e2.x,e2.y-14,'-3','#ffaa00')}}}
++ents.splice(i,1);continue}}
+ // Time Shard relic: enemies 25% slower
+ const relicSlow=P.relic&&P.relic.name==='TIME SHARD'?0.75:1;
+ tickStatuses(e,sdt);if(e.frozen>0){e.frozen-=sdt;continue}
+@@ -3511,7 +3690,8 @@ let raw=Math.max(1,e.dmg-P.arm);
+ if(P.thorns){e.hp-=P.thorns;emit(e.x,e.y,4,'#ff8844',2,8,1.5)}
+ if(e.poisonous)applyStatus(P,'poison',60);
+ if(P.shield>0){const abs=Math.min(P.shield,raw);P.shield-=abs;raw-=abs;sfx('shield');P.shieldRegenT=60}
+-if(raw>0){P.hp-=raw;P.dmgTaken+=raw;ft(P.x,P.y-14,`-${raw}`,'#ff3366',1)}
++if(raw>0){P.hp-=raw;P.dmgTaken+=raw;ft(P.x,P.y-14,`-${raw}`,'#ff3366',1);
++P._lastDmgSource=e.type==='boss'?(e.bossName||BOSS_LORE[e.bossIdx]?.name||'BOSS'):e.name||e.type.toUpperCase()}
+ P.inv=24;e.atkCd=e.atkSpd;shk=7;shkAngle=ang+Math.PI;chromAb=2;
+ if(P.ironWill){P.vx+=Math.cos(ang+Math.PI)*1;P.vy+=Math.sin(ang+Math.PI)*1}else{P.vx+=Math.cos(ang+Math.PI)*5.5;P.vy+=Math.sin(ang+Math.PI)*5.5}
+ if(P.overcharge)abCh=Math.min(abMax,abCh+abMax*0.15);
+@@ -3560,7 +3740,7 @@ p.enemy=0;p.vx*=-1.5;p.vy*=-1.5;p.dmg*=1.5;sfx('reflect');continue}
+ let raw=Math.max(1,p.dmg-P.arm);
+ if(p.slow)applyStatus(P,'slow',50);
+ if(P.shield>0){const abs=Math.min(P.shield,raw);P.shield-=abs;raw-=abs;P.shieldRegenT=60}
+-if(raw>0){P.hp-=raw;P.dmgTaken+=raw;ft(P.x,P.y-14,`-${raw}`,'#ff3366')}
++if(raw>0){P.hp-=raw;P.dmgTaken+=raw;ft(P.x,P.y-14,`-${raw}`,'#ff3366');P._lastDmgSource='projectile'}
+ P.inv=20;shk=4;chromAb=1.5;emit(P.x,P.y,8,'#ff3366',2,10,1.5);sfx('hurt');flash('#ff0000',.08);
+ // v7.0 Enhanced projectile hurt feedback
+ {const projHitAngle=Math.atan2(P.y-p.y,P.x-p.x);P.stretchDir=projHitAngle;P.stretchT=12;P.flashWhite=3;P.dmgIndicator={angle:projHitAngle,life:20};
+@@ -3681,15 +3861,19 @@ document.getElementById('hp-bar').style.width=`${displayHP*100}%`;
+ const drainEl=document.getElementById('hp-drain');
+ if(drainEl){drainEl.style.width=hpDrainT>0?`${(displayHP-targetHP)*100}%`:'0%';drainEl.style.left=`${targetHP*100}%`}
+ document.getElementById('shield-bar').style.width=`${P.maxShield>0?(P.shield/P.maxShield)*100:0}%`;
+-document.getElementById('xp-bar').style.width=`${(P.xp/P.xpN)*100}%`;
++const xpPct=(P.xp/P.xpN)*100;const xpBarEl=document.getElementById('xp-bar');xpBarEl.style.width=`${xpPct}%`;
++// v9.0 XP bar glow when near full
++if(xpPct>=85){xpBarEl.style.boxShadow=`0 0 12px rgba(196,113,245,${0.3+Math.sin(fr*0.1)*0.2}),0 0 24px rgba(123,47,247,${0.2+Math.sin(fr*0.1)*0.15})`}else{xpBarEl.style.boxShadow=''}
+ document.getElementById('dash-bar').style.width=`${Math.max(0,(1-P.dCd/P.dMax)*100)}%`;
+ document.getElementById('ability-bar').style.width=`${(abCh/abMax)*100}%`;
+ document.getElementById('h-floor').textContent=flr;document.getElementById('h-lvl').textContent=P.lvl;
+-document.getElementById('h-kills').textContent=kills;
++const kEl=document.getElementById('h-kills');if(parseInt(kEl.textContent)!==kills){kEl.textContent=kills;kEl.style.transform='scale(1.3)';kEl.style.color='#ff8888';setTimeout(()=>{kEl.style.transform='scale(1)';kEl.style.color='#c8a0ff'},150)};
+ // v6.1 gold counter roll-up
+ const gEl=document.getElementById('h-gold');
+-if(displayGold!==gold){displayGold+=Math.sign(gold-displayGold)*Math.max(1,Math.ceil(Math.abs(gold-displayGold)*.2));
+-if(Math.abs(displayGold-gold)<2)displayGold=gold;gEl.textContent=displayGold;gEl.style.color='#ffee44'}else{gEl.style.color='#ffcc44'}
++if(displayGold!==gold){const gDiff=gold-displayGold;displayGold+=Math.sign(gDiff)*Math.max(1,Math.ceil(Math.abs(gDiff)*.2));
++if(Math.abs(displayGold-gold)<2)displayGold=gold;gEl.textContent=displayGold;gEl.style.color='#ffee44';
++// v9.0 gold counter scale bounce on gain
++gEl.style.transform=`scale(${1+Math.min(0.3,Math.abs(gDiff)*0.01)})`;gEl.style.textShadow='0 0 8px rgba(255,238,68,0.5)'}else{gEl.style.color='#ffcc44';gEl.style.transform='scale(1)';gEl.style.textShadow='none'}
+ document.getElementById('h-time').textContent=formatTime(runTime);
+ // v6.1 ability charge glow
+ const abBar=document.getElementById('ability-bar');
+@@ -3709,6 +3893,356 @@ else{wdEl.style.color='rgba(255,204,68,0.6)';wdEl.style.textShadow='none'};
+ if(fr%8===0)setCombatIntensity();
+ if(fr%30===0)checkAchievements()}
+ 
++/* ═══════════════════════════════════════════════════
++   v9.0 PARALLAX DEPTH LAYERS — distant background beneath dungeon
++   ═══════════════════════════════════════════════════ */
++function drawParallax(c,cx,cy){
++const bIdx=bio.i;const t=fr*0.01;
++// Layer 1: Deep void — slow scrolling dark shapes
++c.save();const p1x=cx*0.05,p1y=cy*0.05;
++const voidG=c.createRadialGradient(W/2-p1x,H/2-p1y,0,W/2-p1x,H/2-p1y,W*0.6);
++voidG.addColorStop(0,`rgba(${bio.tint[0]+15},${bio.tint[1]+15},${bio.tint[2]+15},0.08)`);
++voidG.addColorStop(1,'rgba(0,0,0,0)');c.fillStyle=voidG;c.fillRect(cx-20,cy-20,W+40,H+40);
++// Distant structures per biome
++c.globalAlpha=0.04;
++const struct=[[// Crypt: distant pillars
++()=>{for(let i=0;i<5;i++){const sx=((i*220+30)%(W+200))-p1x*2,sy=H*0.3+Math.sin(t+i*1.5)*30-p1y*2;
++c.fillStyle='rgba(80,60,120,1)';c.fillRect(cx+sx,cy+sy,8,120+i*20)}}],
++[// Fungal: bioluminescent orbs
++()=>{for(let i=0;i<8;i++){const ox=((i*170+50)%(W+160))-p1x*3,oy=((i*130+80)%(H+120))-p1y*3;
++const pulse=Math.sin(t*2+i*0.8)*0.5+0.5;c.fillStyle=`rgba(80,255,120,${pulse*0.8})`;c.shadowBlur=20;c.shadowColor='rgba(80,255,120,0.3)';
++c.beginPath();c.arc(cx+ox,cy+oy,4+pulse*6,0,Math.PI*2);c.fill();c.shadowBlur=0}}],
++[// Infernal: distant lava rivers
++()=>{c.strokeStyle='rgba(255,100,30,0.8)';c.lineWidth=3+Math.sin(t)*1.5;c.beginPath();
++const lx=cx-p1x*2;for(let x=0;x<W+60;x+=8){const ly=cy+H*0.7+Math.sin(x*0.008+t*0.5)*40-p1y*2;
++x===0?c.moveTo(lx+x,ly):c.lineTo(lx+x,ly)}c.stroke();
++c.strokeStyle='rgba(255,200,50,0.4)';c.lineWidth=1;c.stroke()}],
++[// Frozen: distant ice formations
++()=>{for(let i=0;i<6;i++){const ix=((i*190+40)%(W+180))-p1x*2,iy=H*0.6+i*15-p1y*2;
++c.fillStyle='rgba(120,180,255,0.6)';c.beginPath();c.moveTo(cx+ix,cy+iy);c.lineTo(cx+ix+6,cy+iy-50-i*10);c.lineTo(cx+ix+12,cy+iy);c.fill()}}],
++[// Void: warping geometric shapes
++()=>{for(let i=0;i<4;i++){const vx=W/2+Math.cos(t*0.3+i*Math.PI/2)*200-p1x*4,vy=H/2+Math.sin(t*0.4+i*Math.PI/2)*150-p1y*4;
++c.save();c.translate(cx+vx,cy+vy);c.rotate(t*0.2+i);c.strokeStyle='rgba(180,80,255,0.6)';c.lineWidth=1;c.strokeRect(-15,-15,30,30);
++c.strokeRect(-10,-10,20,20);c.restore()}}]];
++if(struct[bIdx])struct[bIdx][0]();
++c.globalAlpha=1;
++// Layer 2: Mid-depth fog wisps
++const p2x=cx*0.12,p2y=cy*0.12;c.globalAlpha=0.025;
++for(let w=0;w<3;w++){const wx=((w*300+fr*0.3)%(W+400))-200-p2x,wy=H*0.2+w*H*0.25+Math.sin(t*0.5+w*2)*50-p2y;
++const fg=c.createRadialGradient(cx+wx,cy+wy,0,cx+wx,cy+wy,80+w*30);
++fg.addColorStop(0,`rgba(${bio.tint[0]*3},${bio.tint[1]*3},${bio.tint[2]*3},0.6)`);
++fg.addColorStop(1,'rgba(0,0,0,0)');c.fillStyle=fg;c.fillRect(cx+wx-120,cy+wy-120,240,240)}
++c.globalAlpha=1;c.restore()}
++
++/* ═══════════════════════════════════════════════════
++   v9.0 DYNAMIC WEATHER SYSTEM — full-screen biome weather effects
++   ═══════════════════════════════════════════════════ */
++let weatherParts=[];const WEATHER_MAX=120;
++function updateWeather(sdt){const bIdx=bio.i;
++// Spawn weather particles
++if(bIdx===0&&fr%6===0&&weatherParts.length<WEATHER_MAX){// Crypt: floating dust motes
++for(let i=0;i<2;i++)weatherParts.push({x:Math.random()*W,y:Math.random()*H,vx:(Math.random()-.5)*.2,vy:(Math.random()-.5)*.15,
++life:200+Math.random()*200,ml:400,size:1+Math.random()*1.5,color:'rgba(200,180,160,0.15)',type:'dust'})}
++if(bIdx===1&&fr%3===0&&weatherParts.length<WEATHER_MAX){// Fungal: bioluminescent rain
++weatherParts.push({x:Math.random()*W,y:-10,vx:(Math.random()-.5)*.3+.2,vy:1.5+Math.random()*2,
++life:120+Math.random()*60,ml:180,size:1+Math.random(),color:`rgba(${80+Math.random()*40},${200+Math.random()*55},${100+Math.random()*55},0.2)`,type:'rain'})}
++if(bIdx===2&&fr%2===0&&weatherParts.length<WEATHER_MAX){// Infernal: rising embers
++for(let i=0;i<2;i++)weatherParts.push({x:Math.random()*W,y:H+10,vx:(Math.random()-.5)*1.2,vy:-1-Math.random()*2.5,
++life:100+Math.random()*80,ml:180,size:.8+Math.random()*2.5,color:Math.random()>.4?'rgba(255,120,40,0.25)':'rgba(255,200,60,0.2)',type:'ember'})}
++if(bIdx===3&&fr%2===0&&weatherParts.length<WEATHER_MAX){// Frozen: heavy snowfall
++for(let i=0;i<3;i++){const windGust=Math.sin(fr*0.008)*1.5;
++weatherParts.push({x:Math.random()*W,y:-10,vx:windGust+(Math.random()-.5)*.8,vy:.6+Math.random()*1.5,
++life:200+Math.random()*150,ml:350,size:1+Math.random()*3,color:`rgba(${210+Math.random()*45},${220+Math.random()*35},255,${0.1+Math.random()*0.15})`,type:'snow'})}}
++if(bIdx===4&&fr%4===0&&weatherParts.length<WEATHER_MAX){// Void: reality fragments
++weatherParts.push({x:Math.random()*W,y:Math.random()*H,vx:0,vy:0,
++life:30+Math.random()*40,ml:70,size:2+Math.random()*8,color:'rgba(180,80,255,0.08)',type:'glitch',
++gx:Math.random()*W,gy:Math.random()*H})}
++// Update
++for(let i=weatherParts.length-1;i>=0;i--){const p=weatherParts[i];p.x+=p.vx;p.y+=p.vy;p.life--;
++if(p.type==='dust'){p.vx+=Math.sin(fr*0.02+p.x*0.01)*0.01;p.vy+=Math.cos(fr*0.015+p.y*0.01)*0.01}
++if(p.type==='snow'){p.vx+=Math.sin(fr*0.01+i)*0.02}
++if(p.life<=0||p.x<-20||p.x>W+20||p.y<-20||p.y>H+20)weatherParts.splice(i,1)}}
++function drawWeather(c){if(!weatherParts.length)return;
++for(const p of weatherParts){const a=Math.min(1,p.life/p.ml)*Math.min(1,(p.ml-p.life)/20);
++c.globalAlpha=a;c.fillStyle=p.color;
++if(p.type==='rain'){c.strokeStyle=p.color;c.lineWidth=1;c.beginPath();c.moveTo(p.x,p.y);c.lineTo(p.x-p.vx*3,p.y-p.vy*3);c.stroke()}
++else if(p.type==='glitch'){c.fillRect(p.gx,p.gy,p.size,2);c.fillRect(p.gx+Math.random()*10-5,p.gy+3,p.size*0.6,1)}
++else if(p.type==='snow'){c.beginPath();c.arc(p.x,p.y,p.size,0,Math.PI*2);c.fill();
++if(p.size>2){c.globalAlpha=a*0.3;c.beginPath();c.arc(p.x,p.y,p.size*2,0,Math.PI*2);c.fill()}}
++else{c.beginPath();c.arc(p.x,p.y,p.size,0,Math.PI*2);c.fill()}}
++c.globalAlpha=1;
++// Frozen: frost creeping on screen edges
++if(bio.i===3){const frostA=0.06+Math.sin(fr*0.02)*0.02;
++c.fillStyle=`rgba(180,220,255,${frostA})`;
++const edgeW=12+Math.sin(fr*0.03)*4;
++// Top frost edge with icicle shapes
++for(let x=0;x<W;x+=15){const ih=edgeW+Math.sin(x*0.1+fr*0.02)*6;
++c.beginPath();c.moveTo(x,0);c.lineTo(x+8,0);c.lineTo(x+4,ih);c.fill()}
++// Bottom frost
++for(let x=0;x<W;x+=18){const ih=edgeW*0.7+Math.sin(x*0.08)*4;
++c.beginPath();c.moveTo(x,H);c.lineTo(x+6,H);c.lineTo(x+3,H-ih);c.fill()}}
++// Void: screen tear lines
++if(bio.i===4&&fr%30<2){c.fillStyle='rgba(180,80,255,0.06)';const ty=Math.random()*H;
++c.fillRect(0,ty,W,1+Math.random()*3);c.fillRect(Math.random()*W*0.3,ty-2,W*0.4,1)}}
++
++/* ═══════════════════════════════════════════════════
++   v9.0 BOSS INTRODUCTION CINEMATIC
++   ═══════════════════════════════════════════════════ */
++let bossIntroActive=false,bossIntroIdx=0,bossIntroPhase=0;
++function playBossIntro(idx){bossIntroActive=true;bossIntroT=0;bossIntroIdx=idx;bossIntroPhase=0;
++MUS.tgtInt=0.2;sfx('boss_intro');ia()}
++function updateBossIntro(dt){if(!bossIntroActive)return false;bossIntroT+=dt;
++if(bossIntroT>180){// Intro complete — start fight
++bossIntroActive=false;bossIntroPhase=0;setBossMusic(true,bossIntroIdx);return false}
++if(bossIntroT>10&&bossIntroPhase===0){bossIntroPhase=1;// Darken
++if(ac){const n=ac.currentTime;for(let i=0;i<3;i++){const o=ac.createOscillator(),g=ac.createGain();
++o.type='sine';o.frequency.value=60+i*20;g.gain.setValueAtTime(0.04,n+i*0.3);g.gain.exponentialRampToValueAtTime(0.001,n+i*0.3+1);
++o.connect(g);g.connect(masterGain);o.start(n+i*0.3);o.stop(n+i*0.3+1.2)}}}
++if(bossIntroT>50&&bossIntroPhase===1){bossIntroPhase=2;// Name reveal
++musStinger('bossIntro');shk=8}
++if(bossIntroT>120&&bossIntroPhase===2){bossIntroPhase=3;// Ready
++flash(BOSS_LORE[bossIntroIdx]?.color||'#ff4444',0.15);shk=15;chromAb=8;
++addShockwave(W/2,H/2,200,BOSS_LORE[bossIntroIdx]?.color||'#ff4444',20)}
++return true}
++function drawBossIntro(c){if(!bossIntroActive)return;
++const bl=BOSS_LORE[bossIntroIdx]||BOSS_LORE[0];const prog=bossIntroT/180;
++// Darken overlay
++const darkA=Math.min(0.85,bossIntroT/40*0.85);c.fillStyle=`rgba(4,4,12,${darkA})`;c.fillRect(0,0,W,H);
++// Phase 1: Boss silhouette rises
++if(bossIntroPhase>=1){const silA=Math.min(1,(bossIntroT-10)/40);const riseY=H*0.55+Math.max(0,(1-silA)*80);
++c.save();c.translate(W/2,riseY);
++// Dramatic aura rings
++const auraR=60+Math.sin(bossIntroT*0.08)*15;for(let r=3;r>=0;r--){
++c.globalAlpha=silA*0.08*(4-r);c.fillStyle=bl.color;c.beginPath();c.arc(0,0,auraR+r*25,0,Math.PI*2);c.fill()}
++// Boss body silhouette
++c.globalAlpha=silA*0.9;c.fillStyle=darkenColor(bl.color,40);
++c.beginPath();c.ellipse(0,0,28,34,0,0,Math.PI*2);c.fill();
++// Crown/horns
++c.fillStyle=bl.color;c.beginPath();c.moveTo(-18,-28);c.lineTo(-12,-42);c.lineTo(-6,-30);c.fill();
++c.beginPath();c.moveTo(18,-28);c.lineTo(12,-42);c.lineTo(6,-30);c.fill();
++// Eye
++const eyeGlow=Math.sin(bossIntroT*0.1)*0.3+0.7;c.fillStyle=bl.color;c.shadowColor=bl.color;c.shadowBlur=20*eyeGlow;
++c.beginPath();c.ellipse(0,-8,4,6*eyeGlow,0,0,Math.PI*2);c.fill();c.shadowBlur=0;
++c.restore()}
++// Phase 2: Name typewriter
++if(bossIntroPhase>=2){const nameT=Math.min(1,(bossIntroT-50)/30);const name=bl.name;
++const visLen=Math.floor(name.length*nameT);const visName=name.substring(0,visLen);
++c.globalAlpha=1;c.fillStyle=bl.color;c.shadowColor=bl.color;c.shadowBlur=30;
++c.font='24px Silkscreen';c.textAlign='center';c.textBaseline='middle';c.fillText(visName,W/2,H*0.28);c.shadowBlur=0;
++// Subtitle
++if(nameT>=1){const descA=Math.min(1,(bossIntroT-80)/20);c.globalAlpha=descA*0.5;
++c.font='10px Cinzel';c.fillStyle='rgba(200,180,255,0.6)';c.fillText(bl.desc.substring(0,Math.floor(bl.desc.length*descA)),W/2,H*0.34)}}
++// Phase 3: Flash + ready
++if(bossIntroPhase>=3){const readyA=Math.sin((bossIntroT-120)*0.1)*0.3+0.7;
++c.globalAlpha=readyA;c.fillStyle='rgba(255,255,255,0.6)';c.font='10px Silkscreen';c.textAlign='center';
++c.fillText('PREPARE YOURSELF',W/2,H*0.75)}
++c.globalAlpha=1}
++
++/* ═══════════════════════════════════════════════════
++   v9.0 SCREEN TRANSITIONS — dramatic floor/death/victory transitions
++   ═══════════════════════════════════════════════════ */
++let transEffect=null;
++function startTransition(type,duration,color){transEffect={type,t:0,dur:duration||80,color:color||'#06060c',phase:0}}
++function drawTransitionEffect(c){if(!transEffect)return;const te=transEffect;const prog=te.t/te.dur;
++if(te.type==='void_consume'){// Void tendrils consume screen
++const n=12;for(let i=0;i<n;i++){const angle=Math.PI*2/n*i;const len=prog<0.5?prog*2*Math.max(W,H)*0.8:Math.max(W,H)*0.8;
++const cx2=W/2,cy2=H/2;c.fillStyle=te.color;c.globalAlpha=0.12;
++c.beginPath();c.moveTo(cx2,cy2);
++for(let d=0;d<len;d+=10){const wobble=Math.sin(d*0.05+i*2+fr*0.1)*20;
++c.lineTo(cx2+Math.cos(angle)*d+Math.cos(angle+Math.PI/2)*wobble,cy2+Math.sin(angle)*d+Math.sin(angle+Math.PI/2)*wobble)}
++c.lineTo(cx2+Math.cos(angle+0.15)*len,cy2+Math.sin(angle+0.15)*len);c.closePath();c.fill()}
++if(prog>0.4){c.globalAlpha=Math.min(1,(prog-0.4)/0.2);c.fillStyle=te.color;c.fillRect(0,0,W,H)}
++if(prog>0.6){c.globalAlpha=1-(prog-0.6)/0.4;c.fillStyle=te.color;c.fillRect(0,0,W,H)}}
++else if(te.type==='shatter'){// Screen cracks then shatters
++if(prog<0.5){c.strokeStyle='rgba(255,255,255,0.3)';c.lineWidth=2;
++const cracks=6;for(let i=0;i<cracks;i++){const sa=Math.PI*2/cracks*i+0.3;const sl=prog*2*Math.max(W,H)*0.4;
++c.beginPath();c.moveTo(W/2,H/2);let cx2=W/2,cy2=H/2;
++for(let s=0;s<sl;s+=20){cx2+=Math.cos(sa+Math.sin(s*0.1)*0.3)*20;cy2+=Math.sin(sa+Math.sin(s*0.1)*0.3)*20;c.lineTo(cx2,cy2)}c.stroke()}}
++else{const shatterProg=(prog-0.5)*2;c.globalAlpha=shatterProg;c.fillStyle=te.color;c.fillRect(0,0,W,H)}}
++else if(te.type==='drain'){// Color drains downward
++const drainH=H*prog*1.2;c.fillStyle=te.color;c.globalAlpha=0.8;c.fillRect(0,0,W,Math.min(H,drainH));
++if(prog>0.8){c.globalAlpha=(prog-0.8)/0.2;c.fillRect(0,0,W,H)}}
++else if(te.type==='golden_flood'){// Golden light floods upward
++const floodH=H*(1-prog)*1.2;c.fillStyle='rgba(255,200,60,0.15)';c.globalAlpha=Math.min(1,prog*2);
++c.fillRect(0,Math.max(0,floodH),W,H-floodH);
++if(prog>0.5){c.fillStyle=te.color;c.globalAlpha=(prog-0.5)*2;c.fillRect(0,0,W,H)}}
++c.globalAlpha=1;te.t++;if(te.t>=te.dur)transEffect=null}
++
++/* ═══════════════════════════════════════════════════
++   v9.0 ROOM MODIFIER SYSTEM — random room-level challenges
++   ═══════════════════════════════════════════════════ */
++const ROOM_MODS=[
++{name:'DARKNESS',icon:'●',color:'#8888aa',desc:'Light radius halved',
++apply:()=>{P._savedLR=P.lightRadius||280;P.lightRadius=140},remove:()=>{P.lightRadius=P._savedLR||280}},
++{name:'SWARM',icon:'◆',color:'#ff8844',desc:'2x enemies, half HP',
++apply:()=>{for(const e of ents){e.hp=Math.ceil(e.hp*0.5);e.mhp=Math.ceil(e.mhp*0.5)}},remove:()=>{}},
++{name:'CURSED',icon:'☠',color:'#aa44ff',desc:'No healing',
++apply:()=>{P._cursedRoom=true},remove:()=>{P._cursedRoom=false}},
++{name:'GOLDEN',icon:'★',color:'#ffcc00',desc:'3x gold drops',
++apply:()=>{P._goldenRoom=true},remove:()=>{P._goldenRoom=false}},
++{name:'BURNING',icon:'◆',color:'#ff4422',desc:'Floor catches fire',
++apply:()=>{cR._burnTimer=0;cR._burnTiles=[]},remove:()=>{}},
++{name:'ECHO',icon:'◎',color:'#88ccff',desc:'Attacks echo',
++apply:()=>{P._echoRoom=true},remove:()=>{P._echoRoom=false}},
++{name:'VOLATILE',icon:'⚡',color:'#ffaa00',desc:'Enemies explode on death',
++apply:()=>{P._volatileRoom=true},remove:()=>{P._volatileRoom=false}}];
++let curRoomMod=null;
++function rollRoomMod(){if(cR.type==='boss'||cR.type==='shop'||cR.type==='start'||cR.type==='lore')return null;
++if(Math.random()>0.25+flr*0.02)return null;// ~25-45% chance scaling with floor
++return ROOM_MODS[Math.floor(Math.random()*ROOM_MODS.length)]}
++
++/* ═══════════════════════════════════════════════════
++   v9.0 ENVIRONMENTAL KILL SYSTEM
++   ═══════════════════════════════════════════════════ */
++function checkEnvironmentalDmg(e,sdt){
++if(!e||e.type==='boss')return;
++// Wall collision damage at high velocity
++const spd=Math.hypot(e.vx,e.vy);
++if(spd>6){const ntx=Math.floor((e.x+e.vx*2)/TS),nty=Math.floor((e.y+e.vy*2)/TS);
++if(ntx>=0&&ntx<RW&&nty>=0&&nty<RH&&cR.tiles[nty][ntx]===1){
++const wallDmg=Math.floor(spd*0.8);e.hp-=wallDmg;e.vx*=-0.5;e.vy*=-0.5;
++ft(e.x,e.y-14,`-${wallDmg}`,'#ffaa44');emit(e.x,e.y,6,'#ffaa44',3,12,2);sfx('smash');shk=3;
++if(e.hp<=0){ft(e.x,e.y-28,'WALL KILL!','#ffcc00',1.2);
++const bonusXP=Math.ceil(e.xp*0.5);P.xp+=bonusXP;kills++;tKills++;addCmb();sfx('kill');typedDeathBurst(e);
++const bonusGold=Math.ceil(e.gold*0.5);picks.push({x:e.x,y:e.y,type:'gold',val:bonusGold,life:300,vy:-1.5,vx:(Math.random()-.5)*2});
++e.hp=0;e.animState='die';e.animFrame=0;return true}}}
++// Lava tile damage
++const etx=Math.floor(e.x/TS),ety=Math.floor(e.y/TS);
++if(etx>=0&&etx<RW&&ety>=0&&ety<RH&&cR.tiles[ety][etx]===3&&bio.hazard){
++if(bio.hazard.type==='lava'&&fr%30===0){e.hp-=2;ft(e.x,e.y-14,'-2','#ff6633');emit(e.x,e.y,3,'#ff4400',1.5,8,1.5);
++if(e.hp<=0){ft(e.x,e.y-28,'LAVA KILL!','#ff6633',1.2);kills++;tKills++;addCmb();sfx('kill');typedDeathBurst(e);
++e.hp=0;e.animState='die';e.animFrame=0;return true}}}
++// Trap damage to enemies
++for(const trap of cR.traps){if(!trap.on)continue;const tx2=trap.tx*TS+TS/2,ty2=trap.ty*TS+TS/2;
++if(Math.abs(e.x-tx2)<TS*.4&&Math.abs(e.y-ty2)<TS*.4&&fr%20===0){
++e.hp-=2;ft(e.x,e.y-14,'-2','#ff6688');if(e.hp<=0){ft(e.x,e.y-28,'TRAP KILL!','#ff4488',1.2);
++kills++;tKills++;addCmb();sfx('kill');typedDeathBurst(e);e.hp=0;e.animState='die';e.animFrame=0;return true}}}
++return false}
++
++/* ═══════════════════════════════════════════════════
++   v9.0 SETTINGS SYSTEM
++   ═══════════════════════════════════════════════════ */
++let gameSettings={shakeIntensity:1,crtEnabled:true,particleDensity:1,showFPS:false,
++masterVol:0.6,sfxVol:1,musicVol:1};
++function loadSettings(){try{const s=localStorage.getItem('vd_settings');if(s)gameSettings={...gameSettings,...JSON.parse(s)}}catch(e){}}
++function saveSettings(){try{localStorage.setItem('vd_settings',JSON.stringify(gameSettings))}catch(e){}}
++loadSettings();
++function openSettings(){document.getElementById('settings-overlay').style.display='flex';
++document.getElementById('s-master').value=gameSettings.masterVol*100;
++document.getElementById('s-sfx').value=gameSettings.sfxVol*100;
++document.getElementById('s-music').value=gameSettings.musicVol*100;
++document.getElementById('s-shake').value=gameSettings.shakeIntensity;
++document.getElementById('s-crt').checked=gameSettings.crtEnabled;
++document.getElementById('s-parts').value=gameSettings.particleDensity>=0.8?'1':gameSettings.particleDensity>=0.4?'0.6':'0.25';
++document.getElementById('s-fps').checked=gameSettings.showFPS}
++function closeSettings(){document.getElementById('settings-overlay').style.display='none';saveSettings()}
++
++/* ═══════════════════════════════════════════════════
++   v9.0 FPS COUNTER
++   ═══════════════════════════════════════════════════ */
++let fpsFrames=0,fpsLast=performance.now(),fpsDisplay=60,fpsLow=60;
++function updateFPS(){fpsFrames++;const now=performance.now();if(now-fpsLast>=500){fpsDisplay=Math.round(fpsFrames*1000/(now-fpsLast));fpsLow=Math.min(fpsLow,fpsDisplay);fpsFrames=0;fpsLast=now;
++// Auto LOD: reduce particles if FPS drops
++if(fpsDisplay<40)gameSettings.particleDensity=Math.max(0.25,gameSettings.particleDensity-0.1);
++else if(fpsDisplay>55&&gameSettings.particleDensity<1)gameSettings.particleDensity=Math.min(1,gameSettings.particleDensity+0.05)}}
++
++/* ═══════════════════════════════════════════════════
++   v9.0 CHALLENGE CURSE SYSTEM — Hades-style difficulty modifiers
++   ═══════════════════════════════════════════════════ */
++const CURSES=[
++{name:'FRAGILE',desc:'-30% Max HP',icon:'♥',color:'#ff4466',scoreMult:1.15,apply:p=>{p.mhp=Math.ceil(p.mhp*0.7);p.hp=Math.min(p.hp,p.mhp)}},
++{name:'RELENTLESS',desc:'No enemy knockback',icon:'⚔',color:'#ff8844',scoreMult:1.10,apply:p=>{p._noKnockback=true}},
++{name:'SCARCITY',desc:'No health drops',icon:'✦',color:'#aa44ff',scoreMult:1.20,apply:p=>{p._noHealDrops=true}},
++{name:'HASTE',desc:'Everything 20% faster',icon:'⚡',color:'#44ccff',scoreMult:1.15,apply:p=>{p._hasteWorld=true}},
++{name:'GLASS',desc:'+50% damage dealt & taken',icon:'◇',color:'#ffcc00',scoreMult:1.25,apply:p=>{p.bd*=1.5;p._glassCurse=true}},
++{name:'FAMINE',desc:'No shop healing',icon:'☠',color:'#66ff44',scoreMult:1.10,apply:p=>{p._famineCurse=true}}];
++let activeCurses=[],curseScoreMult=1;
++// v9.0 Curse selection UI
++function renderCursePanel(){const grid=document.getElementById('curse-grid');if(!grid)return;grid.innerHTML='';
++CURSES.forEach((c,i)=>{const isActive=activeCurses.includes(c);
++const btn=document.createElement('div');
++btn.style.cssText=`font-family:Silkscreen,monospace;font-size:7px;padding:4px 8px;border:1px solid ${isActive?c.color:'rgba(180,140,255,0.15)'};
++border-radius:3px;cursor:pointer;color:${isActive?c.color:'rgba(200,180,255,0.3)'};background:${isActive?'rgba(255,100,100,0.1)':'rgba(10,10,20,0.5)'};
++letter-spacing:1px;transition:all .2s;user-select:none`;
++btn.textContent=`${c.icon} ${c.name} +${Math.round((c.scoreMult-1)*100)}%`;
++btn.title=c.desc;
++btn.onclick=()=>{if(activeCurses.includes(c))activeCurses=activeCurses.filter(ac=>ac!==c);else activeCurses.push(c);
++curseScoreMult=activeCurses.reduce((m,ac)=>m*ac.scoreMult,1);renderCursePanel()};
++grid.appendChild(btn)});
++const multEl=document.getElementById('curse-mult');
++if(multEl)multEl.textContent=activeCurses.length?`SCORE: x${curseScoreMult.toFixed(2)}`:''}
++// v9.0 Codex/Bestiary system
++let codexData={enemies:{},weapons:{},bosses:{},biomes:{}};
++function loadCodex(){try{const s=localStorage.getItem('vd_codex');if(s)codexData={...codexData,...JSON.parse(s)}}catch(e){}}
++function saveCodex(){try{localStorage.setItem('vd_codex',JSON.stringify(codexData))}catch(e){}}
++loadCodex();
++function recordEnemy(type){if(!codexData.enemies[type])codexData.enemies[type]={seen:0,killed:0};codexData.enemies[type].seen++;saveCodex()}
++function recordEnemyKill(type){if(!codexData.enemies[type])codexData.enemies[type]={seen:0,killed:0};codexData.enemies[type].killed++;saveCodex()}
++function recordWeapon(name){if(!codexData.weapons[name])codexData.weapons[name]=1;saveCodex()}
++function recordBossKill(name){if(!codexData.bosses[name])codexData.bosses[name]=0;codexData.bosses[name]++;saveCodex()}
++function recordBiome(idx){codexData.biomes[idx]=true;saveCodex()}
++function openCodex(){const overlay=document.getElementById('codex-overlay');if(!overlay)return;overlay.style.display='flex';
++const content=document.getElementById('codex-content');
++const ENEMY_INFO={rat:{name:'RAT',desc:'Vermin that infest the upper halls.'},slime:{name:'SLIME',desc:'Gelatinous mass that divides when cornered.'},
++bat:{name:'BAT',desc:'Swift flyers of the dark corridors.'},spider:{name:'SPIDER',desc:'Web-spinners that trap the unwary.'},
++skel:{name:'SKELETON',desc:'Animated bones of fallen warriors.'},mage:{name:'MAGE',desc:'Caster that hurls fire from a distance.'},
++brute:{name:'BRUTE',desc:'Massive, armored, and slow but devastating.'},assassin:{name:'ASSASSIN',desc:'Lightning-fast dashes through the shadows.'},
++wraith:{name:'WRAITH',desc:'Ethereal beings that phase through walls.'},golem:{name:'GOLEM',desc:'Constructed from stone, shakes the earth.'},
++necromancer:{name:'NECROMANCER',desc:'Raises the dead to fight for them.'},swarmer:{name:'SWARMER',desc:'Tiny but relentless in numbers.'},
++shaman:{name:'SHAMAN',desc:'Heals and empowers allied monsters.'},knight:{name:'KNIGHT',desc:'Armored warrior with shield blocks.'},
++stalker:{name:'STALKER',desc:'Nearly invisible predator.'},revenant:{name:'REVENANT',desc:'Ghostly mirror of the player.'},
++mimic:{name:'MIMIC',desc:'Chest that bites back.'}};
++let html='<div style="display:flex;gap:16px;flex-wrap:wrap;justify-content:center">';
++// Enemies
++html+='<div style="flex:1;min-width:200px"><div style="font-family:Silkscreen,monospace;font-size:10px;color:#c8a0ff;letter-spacing:3px;margin-bottom:8px">BESTIARY</div>';
++for(const[type,info]of Object.entries(ENEMY_INFO)){const data=codexData.enemies[type];
++const discovered=data&&data.seen>0;
++html+=`<div style="padding:4px 8px;margin:2px 0;border:1px solid rgba(180,140,255,${discovered?0.15:0.05});border-radius:2px;background:rgba(10,10,20,0.5)">`;
++html+=`<span style="font-family:Silkscreen,monospace;font-size:7px;color:${discovered?'rgba(200,180,255,0.5)':'rgba(100,80,120,0.3)'};letter-spacing:1px">${discovered?info.name:'???'}</span>`;
++if(discovered)html+=`<span style="font-family:'JetBrains Mono',monospace;font-size:6px;color:rgba(200,180,255,0.25);margin-left:8px">Killed: ${data.killed||0}</span>`;
++html+='</div>'}
++html+='</div>';
++// Bosses
++html+='<div style="flex:1;min-width:200px"><div style="font-family:Silkscreen,monospace;font-size:10px;color:#ffcc00;letter-spacing:3px;margin-bottom:8px">BOSSES</div>';
++for(const bl of BOSS_LORE){const defeated=codexData.bosses[bl.name]>0;
++html+=`<div style="padding:4px 8px;margin:2px 0;border:1px solid ${defeated?bl.color+'33':'rgba(100,80,120,0.08)'};border-radius:2px;background:rgba(10,10,20,0.5)">`;
++html+=`<span style="font-family:Silkscreen,monospace;font-size:7px;color:${defeated?bl.color:'rgba(100,80,120,0.3)'};letter-spacing:1px">${defeated?bl.name:'??? ??? ???'}</span>`;
++if(defeated)html+=`<div style="font-family:Cinzel,serif;font-size:7px;color:rgba(200,180,255,0.3);font-style:italic;margin-top:2px">${bl.desc}</div>`;
++html+='</div>'}
++html+='</div>';
++// Completion
++const totalEnemies=Object.keys(ENEMY_INFO).length;const discoveredEnemies=Object.values(codexData.enemies).filter(e=>e.seen>0).length;
++const totalBosses=BOSS_LORE.length;const defeatedBosses=Object.values(codexData.bosses).filter(v=>v>0).length;
++const pct=Math.round((discoveredEnemies+defeatedBosses)/(totalEnemies+totalBosses)*100);
++html+='</div>';
++html+=`<div style="font-family:Silkscreen,monospace;font-size:8px;color:rgba(200,180,255,0.3);letter-spacing:2px;margin-top:12px">COMPLETION: ${pct}% (${discoveredEnemies}/${totalEnemies} enemies, ${defeatedBosses}/${totalBosses} bosses)</div>`;
++content.innerHTML=html}
++function closeCodex(){document.getElementById('codex-overlay').style.display='none'}
++// v9.0 Onboarding tutorial hint system
++let tutorialHints={firstEnemy:false,firstChest:false,firstLowHP:false,firstShop:false,firstBoss:false};
++function loadTutorial(){try{const s=localStorage.getItem('vd_tutorial');if(s)tutorialHints={...tutorialHints,...JSON.parse(s)}}catch(e){}}
++function saveTutorial(){try{localStorage.setItem('vd_tutorial',JSON.stringify(tutorialHints))}catch(e){}}
++loadTutorial();
++let activeHint=null,hintTimer=0;
++function showHint(key,text){if(tutorialHints[key]||activeHint)return;tutorialHints[key]=true;saveTutorial();
++activeHint={text,life:180};hintTimer=180}
++function updateHint(){if(activeHint){activeHint.life--;if(activeHint.life<=0)activeHint=null}}
++function drawHint(c){if(!activeHint)return;const a=Math.min(1,activeHint.life/20,1-(180-activeHint.life)/160);
++c.save();c.globalAlpha=a*0.7;c.fillStyle='rgba(10,10,20,0.8)';const tw=c.measureText?200:200;
++c.fillRect(W/2-tw/2-10,H-60,tw+20,30);c.globalAlpha=a;
++c.font='8px Silkscreen';c.fillStyle='#c8a0ff';c.textAlign='center';
++c.fillText(activeHint.text,W/2,H-42);c.restore()}
++
++/* ═══════════════════════════════════════════════════
++   v9.0 FLOOR LORE NARRATION
++   ═══════════════════════════════════════════════════ */
++const FLOOR_LORE=[
++['The earth groans as you descend into forgotten depths...','Whispers echo from walls that remember the living...','The darkness thickens. You are not alone here.'],
++['Strange fungi pulse with alien light. The air tastes of decay...','Life flourishes even in death\'s domain, twisted and ravenous...','The mycelium network watches. It knows you are here.'],
++['Heat rises from below. The stone itself bleeds fire...','Ancient forges still burn, fueled by rage eternal...','The flames hunger. They remember their creators.'],
++['Time crystalizes. Each breath hangs frozen before you...','An empire of ice, its rulers long entombed in their own kingdom...','The cold seeps into your soul. Keep moving, or become a statue.'],
++['Reality bends. The walls breathe. Nothing is certain...','The Void whispers truths you cannot unhear...','You approach the source. The heart of nothingness beats ahead.']];
++
+ /* ═══════════════════════════════════════════════════
+    RENDERING ENGINE — v5 procedural entities, textured tiles, enhanced effects
+    ═══════════════════════════════════════════════════ */
+@@ -3720,15 +4254,18 @@ cX=Math.max(-TS*2,Math.min(RPX-W+TS*2,cX));cY=Math.max(-TS*2,Math.min(RPY-H+TS*2
+ if(RPX<W)cX=(RPX-W)/2;if(RPY<H)cY=(RPY-H)/2;
+ // v5 camera zoom
+ if(camZoom!==1){const cx=W/2,cy=H/2;ct.translate(cx,cy);ct.scale(camZoom,camZoom);ct.translate(-cx,-cy)}
+-if(shk>0){const sa=shkAngle||Math.random()*Math.PI*2;
+-const shkX=Math.cos(sa+fr)*(shk*.6)+Math.sin(fr*2.5)*(shk*.2);
+-const shkY=Math.sin(sa+fr*1.3)*(shk*.6)+Math.cos(fr*2.5)*(shk*.2);
++if(shk>0){const si=gameSettings.shakeIntensity||1;const sa=shkAngle||Math.random()*Math.PI*2;
++const shkX=(Math.cos(sa+fr)*(shk*.6)+Math.sin(fr*2.5)*(shk*.2))*si;
++const shkY=(Math.sin(sa+fr*1.3)*(shk*.6)+Math.cos(fr*2.5)*(shk*.2))*si;
+ ct.translate(shkX,shkY)}
+ // v6.1 directional camera punch
+ if(camPunchX!==0||camPunchY!==0){ct.translate(camPunchX,camPunchY);camPunchX*=.8;camPunchY*=.8;if(Math.abs(camPunchX)<.1)camPunchX=0;if(Math.abs(camPunchY)<.1)camPunchY=0}
+ ct.translate(-cX,-cY);ct.fillStyle=bio.fl;ct.fillRect(cX-60,cY-60,W+120,H+120);
+ if(!cR){ct.restore();return}
+ 
++// ═══ v9.0 PARALLAX DEPTH LAYERS — biome atmospheric background ═══
++drawParallax(ct,cX,cY);
++
+ // ═══ TILES — v8.0 cached procedural textures + wall-edge shadows ═══
+ for(let ty=0;ty<RH;ty++)for(let tx=0;tx<RW;tx++){const tile=cR.tiles[ty][tx],px=tx*TS,py=ty*TS;
+ if(px+TS<cX-10||px>cX+W+10||py+TS<cY-10||py>cY+H+10)continue;
+@@ -3746,11 +4283,31 @@ else if(tile===0||tile===2||tile===3){
+ const fv=(tx*7+ty*13+flr)%4;
+ if(tileCache['f'+fv])ct.drawImage(tileCache['f'+fv],px,py);
+ else{ct.fillStyle=bio.fl;ct.fillRect(px,py,TS,TS)}
+-// Wall-edge shadows: cast shadow from adjacent walls
+-if(ty>0&&cR.tiles[ty-1][tx]===1){const sg=ct.createLinearGradient(px,py,px,py+10);sg.addColorStop(0,'rgba(0,0,0,0.18)');sg.addColorStop(1,'rgba(0,0,0,0)');ct.fillStyle=sg;ct.fillRect(px,py,TS,10)}
+-if(tx>0&&cR.tiles[ty][tx-1]===1){const sg=ct.createLinearGradient(px,py,px+8,py);sg.addColorStop(0,'rgba(0,0,0,0.12)');sg.addColorStop(1,'rgba(0,0,0,0)');ct.fillStyle=sg;ct.fillRect(px,py,8,TS)}
+-// Corner shadow from diagonal wall
+-if(ty>0&&tx>0&&cR.tiles[ty-1][tx-1]===1&&cR.tiles[ty-1][tx]!==1&&cR.tiles[ty][tx-1]!==1){ct.fillStyle='rgba(0,0,0,0.08)';ct.beginPath();ct.moveTo(px,py);ct.lineTo(px+10,py);ct.lineTo(px,py+10);ct.fill()}
++// v9.0 Pseudo-3D wall depth faces + enhanced ambient occlusion
++const wAbove=ty>0&&cR.tiles[ty-1][tx]===1,wLeft=tx>0&&cR.tiles[ty][tx-1]===1;
++const wRight=tx<RW-1&&cR.tiles[ty][tx+1]===1,wBelow=ty<RH-1&&cR.tiles[ty+1][tx]===1;
++if(wAbove){// Bottom face of wall above — visible 3D depth strip
++const dh=10;const dg=ct.createLinearGradient(px,py,px,py+dh);
++dg.addColorStop(0,darkenColor(bio.w1,35));dg.addColorStop(0.4,darkenColor(bio.w1,25));dg.addColorStop(1,'rgba(0,0,0,0)');
++ct.fillStyle=dg;ct.fillRect(px,py,TS,dh);
++// Brick texture on depth face
++ct.fillStyle='rgba(0,0,0,0.1)';for(let bx=0;bx<TS;bx+=TS/3)ct.fillRect(px+bx,py,1,dh-2);
++// Highlight line at wall-floor junction
++ct.fillStyle='rgba(255,255,255,0.03)';ct.fillRect(px,py,TS,1)}
++if(wLeft){// Right face of wall to left — side depth strip
++const dw=8;const dg=ct.createLinearGradient(px,py,px+dw,py);
++dg.addColorStop(0,darkenColor(bio.w1,40));dg.addColorStop(0.5,darkenColor(bio.w1,28));dg.addColorStop(1,'rgba(0,0,0,0)');
++ct.fillStyle=dg;ct.fillRect(px,py,dw,TS);
++ct.fillStyle='rgba(0,0,0,0.08)';for(let by=0;by<TS;by+=12)ct.fillRect(px,py+by,dw-2,1)}
++// Corner ambient occlusion — darker where 2+ walls meet
++if(wAbove&&wLeft){const cg=ct.createRadialGradient(px,py,0,px,py,14);
++cg.addColorStop(0,darkenColor(bio.w1,45));cg.addColorStop(1,'rgba(0,0,0,0)');ct.fillStyle=cg;ct.fillRect(px,py,14,14)}
++else if(wAbove&&!wLeft&&tx>0&&cR.tiles[ty-1][tx-1]!==1){// Soft corner shadow
++ct.fillStyle='rgba(0,0,0,0.06)';ct.beginPath();ct.moveTo(px,py);ct.lineTo(px+8,py);ct.lineTo(px,py+8);ct.fill()}
++if(wAbove&&wRight){const cg=ct.createRadialGradient(px+TS,py,0,px+TS,py,14);
++cg.addColorStop(0,'rgba(0,0,0,0.15)');cg.addColorStop(1,'rgba(0,0,0,0)');ct.fillStyle=cg;ct.fillRect(px+TS-14,py,14,14)}
++// Bottom wall edge highlight (wall below current floor)
++if(wBelow){ct.fillStyle='rgba(0,0,0,0.06)';ct.fillRect(px,py+TS-4,TS,4)}
+ // Exit tile overlay
+ if(tile===2&&!ents.length){const pulse=Math.sin(fr*.05)*.3+.7;ct.fillStyle=bio.ac+(pulse*.25)+')';ct.fillRect(px+4,py+4,TS-8,TS-8);
+ ct.fillStyle=bio.ac+pulse+')';ct.font='bold 22px Silkscreen';ct.textAlign='center';ct.textBaseline='middle';ct.fillText('▼',px+TS/2,py+TS/2);
+@@ -3772,8 +4329,10 @@ else if(fd==='runes'&&fh===1){ct.strokeStyle=`rgba(160,80,255,${0.04+Math.sin(fr
+ if(flr>=5&&Math.random()<0.002*flr){ct.fillStyle='rgba(80,40,40,0.15)';ct.fillRect(px+Math.random()*TS,py+Math.random()*TS,2,2)}
+ if(flr>=9&&tile===1&&Math.random()<0.005){ct.fillStyle='rgba(20,15,25,0.3)';ct.fillRect(px+2,py+2,TS-4,TS-4)}}
+ 
+-// v6 Entity floor reflections — subtle stretched shadows
+-for(const e of ents){if(e.animState==='spawn'&&!e.spawnDone)continue;if(e.animState==='die')continue;
++// v6 Entity floor reflections — subtle stretched shadows (v9.0 viewport culling)
++const _margin=60;
++for(const e of ents){if(e.x<cX-_margin||e.x>cX+W+_margin||e.y<cY-_margin||e.y>cY+H+_margin)continue;
++if(e.animState==='spawn'&&!e.spawnDone)continue;if(e.animState==='die')continue;
+ ct.save();ct.translate(e.x,e.y+e.hh+4);ct.scale(1,-0.3);ct.globalAlpha=0.04;ct.fillStyle=e.color;
+ ct.beginPath();ct.ellipse(0,0,e.hw*0.9,e.hh*0.6,0,0,Math.PI*2);ct.fill();ct.restore()}
+ 
+@@ -3943,8 +4502,9 @@ for(let ti=1;ti<weaponTrail.length;ti++){const t0=weaponTrail[ti-1],t1=weaponTra
+ const a=t1.life/8;ct.strokeStyle=t1.color;ct.lineWidth=3*a;ct.globalAlpha=a*0.5;
+ ct.beginPath();ct.moveTo(t0.x,t0.y);ct.quadraticCurveTo((t0.x+t1.x)/2+(Math.random()-.5)*4,(t0.y+t1.y)/2+(Math.random()-.5)*4,t1.x,t1.y);ct.stroke()}ct.globalAlpha=1}
+ 
+-// ═══ ENTITIES — v5 procedural sprites with eyes, limbs, animation ═══
++// ═══ ENTITIES — v5 procedural sprites with eyes, limbs, animation (v9.0 viewport culling) ═══
+ for(const e of ents){
++if(e.x<cX-_margin||e.x>cX+W+_margin||e.y<cY-_margin||e.y>cY+H+_margin)continue;
+ if(e.animState==='spawn'&&!e.spawnDone){
+ // Spawn portal animation
+ ct.save();ct.translate(e.x,e.y);ct.globalAlpha=0.3+e.alpha*0.3;
+@@ -4311,6 +4871,10 @@ ct.beginPath();ct.moveTo(Math.cos(a)*d,Math.sin(a)*d);ct.lineTo(Math.cos(a)*(d+3
+ if(P.bT>0){ct.strokeStyle='rgba(255,50,0,0.2)';ct.lineWidth=2;ct.beginPath();ct.arc(0,0,16+Math.sin(fr*.12)*3,0,Math.PI*2);ct.stroke()}
+ ct.fillStyle='rgba(0,0,0,0.2)';ct.beginPath();ct.ellipse(0,P.hh+3,P.hw+1.5,3.5,0,0,Math.PI*2);ct.fill();
+ if(P.shield>0){ct.strokeStyle='rgba(100,220,210,0.18)';ct.lineWidth=2;ct.beginPath();ct.arc(0,0,P.hw+8,0,Math.PI*2);ct.stroke()}
++// v9.0 Chaos Gem aura indicator
++if(P._chaosAuraT>0){ct.globalAlpha=P._chaosAuraT/20*0.4;ct.strokeStyle=P._chaosAuraColor||'#ff88cc';ct.lineWidth=2;
++ct.shadowColor=P._chaosAuraColor||'#ff88cc';ct.shadowBlur=12;ct.beginPath();ct.arc(0,0,P.hw+10+Math.sin(fr*.2)*3,0,Math.PI*2);ct.stroke();
++ct.shadowBlur=0;ct.globalAlpha=1;P._chaosAuraT--}
+ if(P.parryWindow>0){ct.strokeStyle='rgba(255,255,255,0.45)';ct.lineWidth=3;const pa2=P.parryWindow/10;ct.beginPath();ct.arc(Math.cos(P.dir)*12,Math.sin(P.dir)*12,10*pa2,P.dir-.8,P.dir+.8);ct.stroke()}
+ 
+ // v7.0 Stretch deformation on hurt
+@@ -4360,8 +4924,9 @@ if(cStep===2){ct.lineWidth=4;ct.globalAlpha=wa*.3;ct.beginPath();ct.arc(0,0,wR()
+ else{ct.beginPath();ct.moveTo(Math.cos(P.dir)*8,Math.sin(P.dir)*8);ct.lineTo(Math.cos(P.dir)*24,Math.sin(P.dir)*24);ct.stroke();}}
+ ct.restore();ct.globalAlpha=1}
+ 
+-// v8.0 Particles — enhanced with glow, slash lines, bigger rendering
+-for(const p of parts){ct.globalAlpha=p.life/p.ml;ct.fillStyle=p.color;const sz=p.size*(p.life/p.ml);
++// v8.0 Particles — enhanced with glow, slash lines, bigger rendering (v9.0 viewport culling)
++for(const p of parts){if(p.x<cX-20||p.x>cX+W+20||p.y<cY-20||p.y>cY+H+20)continue;
++ct.globalAlpha=p.life/p.ml;ct.fillStyle=p.color;const sz=p.size*(p.life/p.ml);
+ // Particle glow for size > 3
+ if(sz>3&&!p.telegraph){ct.shadowBlur=sz*1.5;ct.shadowColor=p.color}
+ if(p.telegraph){// v6 danger zone telegraph
+@@ -4369,8 +4934,14 @@ ct.strokeStyle='rgba(255,60,30,'+Math.min(0.35,0.15+0.2*(1-p.life/p.ml))+')';ct.
+ ct.beginPath();ct.arc(p.x,p.y,p.size*(0.5+0.5*(1-p.life/p.ml)),0,Math.PI*2);ct.stroke();ct.setLineDash([]);
+ ct.fillStyle='rgba(255,60,30,'+(0.04+0.06*(1-p.life/p.ml))+')';ct.beginPath();ct.arc(p.x,p.y,p.size*(0.5+0.5*(1-p.life/p.ml)),0,Math.PI*2);ct.fill()}
+ else if(p.shape==='slash'){// v8 crit slash line
+-ct.save();ct.translate(p.x,p.y);ct.rotate(p.slashDir||0);ct.strokeStyle=p.color;ct.lineWidth=2.5;ct.globalAlpha=p.life/p.ml*0.8;
++ct.save();ct.translate(p.x,p.y);ct.rotate(p.slashDir||0);ct.strokeStyle=p.color;ct.lineWidth=p.lineW||2.5;ct.globalAlpha=p.life/p.ml*0.8;
+ ct.beginPath();ct.moveTo(-sz/2,0);ct.lineTo(sz/2,0);ct.stroke();ct.restore()}
++else if(p.shape==='speedline'){// v9.0 manga-style impact speed line
++ct.save();ct.translate(p.x,p.y);ct.rotate(p.slashDir||0);
++const slAlpha=p.life/p.ml;ct.strokeStyle=p.color;ct.lineWidth=Math.max(.5,(p.lineW||1.5)*slAlpha);ct.globalAlpha=slAlpha*.7;
++ct.beginPath();ct.moveTo(0,0);ct.lineTo(sz,0);ct.stroke();
++if(p.lineW>=1.5){ct.strokeStyle='#fff';ct.lineWidth=Math.max(.3,(p.lineW||1)*.4*slAlpha);ct.globalAlpha=slAlpha*.3;ct.beginPath();ct.moveTo(sz*.2,0);ct.lineTo(sz*.8,0);ct.stroke()}
++ct.restore()}
+ else if(p.shape==='star'){// v6 star-shaped crit particles
+ ct.save();ct.translate(p.x,p.y);ct.rotate(fr*0.15+p.x);ct.beginPath();
+ for(let si=0;si<5;si++){const a=Math.PI*2/5*si-Math.PI/2;ct.lineTo(Math.cos(a)*sz/2,Math.sin(a)*sz/2);
+@@ -4453,6 +5024,25 @@ if(bio.i===4&&fr%5===0){// Void: static noise
+ ct.save();ct.globalAlpha=0.03;ct.fillStyle='#cc66ff';
+ for(let v=0;v<8;v++){ct.fillRect(Math.random()*W,Math.random()*H,1+Math.random()*3,1)}ct.restore()}
+ 
++// v9.0 Dynamic weather overlay
++drawWeather(ct);
++// v9.0 Screen transition effect
++drawTransitionEffect(ct);
++// v9.0 Room modifier display
++if(curRoomMod&&gSt==='playing'){const rmA=Math.sin(fr*0.04)*0.15+0.35;
++ct.globalAlpha=rmA;ct.fillStyle=curRoomMod.color;ct.font='7px Silkscreen';ct.textAlign='right';
++ct.fillText(`${curRoomMod.icon} ${curRoomMod.name}`,W-18,46);ct.globalAlpha=1}
++// v9.0 FPS display
++if(gameSettings.showFPS){ct.fillStyle=fpsDisplay<40?'rgba(255,80,80,0.5)':'rgba(255,255,255,0.2)';ct.font='8px JetBrains Mono';ct.textAlign='right';ct.fillText(`${fpsDisplay} FPS`,W-18,H-18)}
++// v9.0 Active curses display
++if(activeCurses.length>0){ct.font='7px Silkscreen';ct.textAlign='left';
++for(let ci=0;ci<activeCurses.length;ci++){ct.fillStyle=activeCurses[ci].color;ct.globalAlpha=0.4;
++ct.fillText(`${activeCurses[ci].icon} ${activeCurses[ci].name}`,18,60+ci*12)}ct.globalAlpha=1}
++// v9.0 Boss intro cinematic overlay
++drawBossIntro(ct);
++// v9.0 Onboarding hints
++drawHint(ct);
++
+ // Boss HP bar
+ const boss=ents.find(e=>e.type==='boss');
+ if(boss){const bw=Math.min(360,W*.55),bx=(W-bw)/2,by=52;
+@@ -4540,8 +5130,11 @@ for(const r of rooms){
+ // VOID EYE relic: see all room types
+ const visible=r.visited||(P.relic&&P.relic.name==='VOID EYE');
+ if(!visible)continue;const rx=ox+r.gx*cs,ry=oy+r.gy*cs;
+-mmt.fillStyle=r===cR?bio.ac+'0.4)':(cols[r.type]||bio.ac+'0.04)');
++// v9.0 Enhanced color-coded rooms + dimmed cleared rooms
++const isCurrentRoom=r===cR;const isCleared=r.cleared;
++mmt.fillStyle=isCurrentRoom?bio.ac+'0.4)':isCleared?(cols[r.type]||bio.ac+'0.03)'):(cols[r.type]||bio.ac+'0.08)');
+ mmt.fillRect(rx+1,ry+1,cs-2,cs-2);
++if(isCleared&&!isCurrentRoom){mmt.fillStyle='rgba(0,0,0,0.3)';mmt.fillRect(rx+1,ry+1,cs-2,cs-2)}
+ // v6 Current room pulse
+ if(r===cR){const pulse=Math.sin(fr*0.06)*0.15+0.15;mmt.strokeStyle=bio.ac+pulse+')';mmt.lineWidth=1;mmt.strokeRect(rx,ry,cs,cs)}
+ // v6 Event room icon

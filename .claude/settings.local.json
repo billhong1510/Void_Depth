@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -n \"^.*\\\\\\\\[ \\\\t]\" \"c:/Users/Bill Hong/Documents/GitHub/Void_Depth/Void_Depth V10.0.html\")"
+    ]
+  }
+}

@@ -1498,12 +1498,13 @@ offers.forEach((c,i)=>{html+=`<div onclick="acceptContract(${i})" style="cursor:
 <div style="color:#ff4444;font-size:7px">✗ ${c.penalty.hp?c.penalty.hp+' HP':''}${c.penalty.espd?'Enemies +'+Math.round(c.penalty.espd*100)+'% spd':''}</div></div>`});
 html+='</div><div onclick="declineContracts()" style="cursor:pointer;color:#666;font-size:8px;margin-top:14px;letter-spacing:2px;font-family:Silkscreen" onmouseenter="this.style.color=\'#aaa\'" onmouseleave="this.style.color=\'#666\'">DECLINE</div>';
 ov.innerHTML=html;window._contractOffers=offers}
-function acceptContract(idx){const c=window._contractOffers[idx];activeContracts.push(c);
+function acceptContract(idx){if(gSt!=='event'||!window._contractOffers)return;const c=window._contractOffers[idx];if(!c)return;activeContracts.push(c);
+window._contractOffers=null;
 streak(c.name+' ACCEPTED','#ffaa44');sfx('combo');
 document.getElementById('event-overlay').style.display='none';gSt='playing'}
 function declineContracts(){document.getElementById('event-overlay').style.display='none';gSt='playing'}
 function evalContracts(){if(activeContracts.length===0)return;
-activeContracts.forEach(c=>{if(c.check()){// Contract succeeded
+activeContracts.forEach(c=>{if(!c||!c.check)return;if(c.check()){// Contract succeeded
 streak(c.name+' COMPLETE!','#44ff66');sfx('synergy');flash('#44ff66',0.08);
 if(c.reward==='perk'){lvlUp()}
 else if(c.reward==='gold50'){gold+=50;tGold+=50;ft(P.x,P.y-20,'+50◆','#ffcc44')}
@@ -2153,35 +2154,43 @@ crt.stroke()}crt.restore()}}
 /* ═══════════════════════════════════════════════════
    TITLE SCREEN ANIMATION
    ═══════════════════════════════════════════════════ */
-let titleParts=[];
+let titleParts=[],shootingStars=[];
 function drawTitle(){
 titleCtx.clearRect(0,0,W,H);
 const cx=W/2,cy=H/2-20;
-// v10.0 Stone Archway Dungeon Entrance in Dark Forest
+// v10.0 Flat ground entrance — hole descending into darkness
 const breathe=0.5+Math.sin(fr*0.02)*0.5;
-const archX=cx,archBaseY=cy+80;// base of arch pillars
-const pillarW=28,pillarH=130,archW=90;// half-width of opening
-const groundY=archBaseY;
+const archX=cx;
+const groundY=cy+15-25;// flat ground level
 
 // === A. FOREST BACKGROUND ===
-// Sky gradient — dark navy to forest green-black
+// Sky gradient — brighter dark blue to forest green-black
 const skyG=titleCtx.createLinearGradient(0,0,0,H);
-skyG.addColorStop(0,'#080e1a');skyG.addColorStop(0.4,'#0a0e18');skyG.addColorStop(0.7,'#0c1610');skyG.addColorStop(1,'#0a120c');
+skyG.addColorStop(0,'#0e1628');skyG.addColorStop(0.35,'#101a2a');skyG.addColorStop(0.6,'#0e1a1e');skyG.addColorStop(1,'#0c1610');
 titleCtx.fillStyle=skyG;titleCtx.fillRect(0,0,W,H);
-// Moonlight — subtle cool radial from upper-right
-const moonG=titleCtx.createRadialGradient(W*0.75,H*0.1,0,W*0.75,H*0.1,W*0.4);
-moonG.addColorStop(0,'rgba(180,200,230,0.04)');moonG.addColorStop(1,'rgba(0,0,0,0)');
+// Moonlight — visible cool radial from upper-right
+const moonG=titleCtx.createRadialGradient(W*0.72,H*0.08,0,W*0.72,H*0.08,W*0.5);
+moonG.addColorStop(0,'rgba(180,200,240,0.10)');moonG.addColorStop(0.5,'rgba(140,170,210,0.04)');moonG.addColorStop(1,'rgba(0,0,0,0)');
 titleCtx.fillStyle=moonG;titleCtx.fillRect(0,0,W,H);
 // Stars through canopy gaps
 for(const s of titleStars){const sx=((s.x+fr*0.02)%W+W)%W;const sy=s.y;
 const twinkle=0.4+Math.sin(fr*0.025+s.seed*10)*0.35;
-titleCtx.globalAlpha=0.15*twinkle;titleCtx.fillStyle='#c8d8ff';
+titleCtx.globalAlpha=0.25*twinkle;titleCtx.fillStyle='#c8d8ff';
 titleCtx.beginPath();titleCtx.arc(sx,sy,s.sz,0,Math.PI*2);titleCtx.fill()}
 titleCtx.globalAlpha=1;
+// Shooting stars — 5% chance per frame
+if(Math.random()<0.05&&shootingStars.length<3){shootingStars.push({x:Math.random()*W,y:Math.random()*H*0.4,
+vx:3+Math.random()*4,vy:1.5+Math.random()*2,life:20+Math.random()*15,ml:35,len:12+Math.random()*18})}
+for(let i=shootingStars.length-1;i>=0;i--){const s=shootingStars[i];s.x+=s.vx;s.y+=s.vy;s.life--;
+if(s.life<=0){shootingStars.splice(i,1);continue}
+const a=s.life/s.ml;titleCtx.save();titleCtx.globalAlpha=a*0.6;titleCtx.strokeStyle='#e8d0ff';titleCtx.lineWidth=1.5;
+titleCtx.beginPath();titleCtx.moveTo(s.x,s.y);titleCtx.lineTo(s.x-s.vx*s.len/5,s.y-s.vy*s.len/5);titleCtx.stroke();
+titleCtx.globalAlpha=a*0.15;titleCtx.lineWidth=3;titleCtx.beginPath();titleCtx.moveTo(s.x,s.y);
+titleCtx.lineTo(s.x-s.vx*s.len/3,s.y-s.vy*s.len/3);titleCtx.stroke();titleCtx.restore()}
 // Distant treeline silhouettes — 10 overlapping dark shapes
 for(const t of titleTrees){const tx=t.x*W;const th=t.h*H;const tw=t.w*W;
 const sway=Math.sin(fr*0.005+t.seed)*2;
-titleCtx.fillStyle=`rgba(${12+t.shade*40},${22+t.shade*30},${14+t.shade*20},0.85)`;
+titleCtx.fillStyle=`rgba(${12+t.shade*40},${22+t.shade*30},${14+t.shade*20},0.70)`;
 titleCtx.beginPath();
 titleCtx.moveTo(tx-tw*0.5+sway,H*0.75);
 titleCtx.lineTo(tx+sway*0.5,H*0.75-th);
@@ -2189,196 +2198,115 @@ titleCtx.lineTo(tx+tw*0.5+sway,H*0.75);titleCtx.closePath();titleCtx.fill();
 // Trunk
 titleCtx.fillStyle=`rgba(${18+t.shade*30},${14+t.shade*20},${10+t.shade*15},0.7)`;
 titleCtx.fillRect(tx-2+sway*0.3,H*0.75,4,H*0.25)}
-// Foreground tree trunks on edges
-for(let side=0;side<2;side++){const ftx=side===0?W*0.06:W*0.94;
-titleCtx.fillStyle='rgba(14,12,8,0.8)';titleCtx.fillRect(ftx-8,H*0.15,16,H*0.85);
-// Branches
-titleCtx.strokeStyle='rgba(14,12,8,0.6)';titleCtx.lineWidth=3;
-for(let b=0;b<3;b++){const by=H*0.2+b*H*0.15;const dir=side===0?1:-1;
-titleCtx.beginPath();titleCtx.moveTo(ftx,by);
-titleCtx.quadraticCurveTo(ftx+dir*40,by-10,ftx+dir*60,by-20+Math.sin(fr*0.004+b)*2);titleCtx.stroke()}}
-
-// === B. GROUND ===
-// Rocky ground
-titleCtx.fillStyle='rgba(22,20,16,0.7)';titleCtx.fillRect(0,groundY-2,W,H-groundY+2);
-// Stone path leading to arch
-for(let sp=0;sp<8;sp++){const sx=archX+(sp-3.5)*28+(Math.sin(sp*2.3)*6);
-const sw=18+Math.sin(sp*1.7)*4;const sh=6+Math.sin(sp*3.1)*2;
-titleCtx.fillStyle=`rgba(${38+sp*2},${32+sp*2},${48+sp*2},0.35)`;
-titleCtx.fillRect(sx-sw/2,groundY+4+sp*8,sw,sh)}
-// Roots from trees
-titleCtx.strokeStyle='rgba(30,25,18,0.3)';titleCtx.lineWidth=2;
-titleCtx.beginPath();titleCtx.moveTo(W*0.06,groundY+5);titleCtx.quadraticCurveTo(W*0.15,groundY+8,archX-archW-pillarW-20,groundY+3);titleCtx.stroke();
-
-// === C. STONE ARCHWAY STRUCTURE ===
-// Dark opening behind arch
-titleCtx.fillStyle='rgba(2,1,4,0.9)';
-titleCtx.beginPath();titleCtx.moveTo(archX-archW,groundY);titleCtx.lineTo(archX+archW,groundY);
-titleCtx.lineTo(archX+archW,archBaseY-pillarH);
-titleCtx.arc(archX,archBaseY-pillarH,archW,0,-Math.PI,true);
-titleCtx.lineTo(archX-archW,groundY);titleCtx.closePath();titleCtx.fill();
-
-// Stone pillars — stacked blocks with variation
-for(let side=0;side<2;side++){const px=side===0?archX-archW-pillarW:archX+archW;
-for(let row=0;row<8;row++){const ry=groundY-row*(pillarH/8)-pillarH/8;
-const shade=42+Math.sin(row*2.7+side*5)*8;const shadeG=shade-8;const shadeB=shade+12;
-titleCtx.fillStyle=`rgba(${shade},${shadeG},${shadeB},0.65)`;
-titleCtx.fillRect(px+1,ry+1,pillarW-2,pillarH/8-2);
-// Mortar lines
-titleCtx.strokeStyle='rgba(25,20,35,0.4)';titleCtx.lineWidth=1;
-titleCtx.strokeRect(px+1,ry+1,pillarW-2,pillarH/8-2);
-// Moss on some stones
-if((row+side*3)%4===0){titleCtx.fillStyle='rgba(35,65,30,0.25)';
-titleCtx.fillRect(px+2,ry+2,pillarW*0.6,4)}}}
-
-// Semicircular arch connecting pillars
-titleCtx.strokeStyle='rgba(55,48,70,0.7)';titleCtx.lineWidth=pillarW;
-titleCtx.beginPath();titleCtx.arc(archX,archBaseY-pillarH,archW+pillarW/2,Math.PI,0,false);titleCtx.stroke();
-// Arch stone segments
-for(let a=0;a<9;a++){const ang=Math.PI-a*(Math.PI/9);const angN=Math.PI-(a+1)*(Math.PI/9);
-const r1=archW+2,r2=archW+pillarW-2;
-const shade=48+Math.sin(a*1.9)*10;
-titleCtx.fillStyle=`rgba(${shade},${shade-6},${shade+8},0.55)`;
-titleCtx.beginPath();
-titleCtx.moveTo(archX+Math.cos(ang)*r1,archBaseY-pillarH+Math.sin(ang)*r1);
-titleCtx.lineTo(archX+Math.cos(ang)*r2,archBaseY-pillarH+Math.sin(ang)*r2);
-titleCtx.lineTo(archX+Math.cos(angN)*r2,archBaseY-pillarH+Math.sin(angN)*r2);
-titleCtx.lineTo(archX+Math.cos(angN)*r1,archBaseY-pillarH+Math.sin(angN)*r1);
-titleCtx.closePath();titleCtx.fill();
-titleCtx.strokeStyle='rgba(25,20,35,0.3)';titleCtx.lineWidth=1;titleCtx.stroke()}
-// Keystone — larger center stone at apex
-titleCtx.fillStyle='rgba(68,58,82,0.7)';
-titleCtx.beginPath();const ksAng=Math.PI/2;const ksW=0.18;
-titleCtx.moveTo(archX+Math.cos(ksAng-ksW)*(archW-2),archBaseY-pillarH+Math.sin(ksAng-ksW)*(archW-2));
-titleCtx.lineTo(archX+Math.cos(ksAng-ksW)*(archW+pillarW+4),archBaseY-pillarH+Math.sin(ksAng-ksW)*(archW+pillarW+4));
-titleCtx.lineTo(archX+Math.cos(ksAng+ksW)*(archW+pillarW+4),archBaseY-pillarH+Math.sin(ksAng+ksW)*(archW+pillarW+4));
-titleCtx.lineTo(archX+Math.cos(ksAng+ksW)*(archW-2),archBaseY-pillarH+Math.sin(ksAng+ksW)*(archW-2));
-titleCtx.closePath();titleCtx.fill();
-titleCtx.strokeStyle='rgba(90,78,105,0.4)';titleCtx.lineWidth=1;titleCtx.stroke();
-
-// === D. STONE STEPS DESCENDING INTO FOG ===
-for(let s=0;s<6;s++){const sy=groundY+s*10;const sw=archW*2*(1-s*0.06);
-const shade=Math.max(0.05,0.3-s*0.045);
-titleCtx.fillStyle=`rgba(50,42,65,${shade})`;
-titleCtx.fillRect(archX-sw/2,sy,sw,8);
-titleCtx.strokeStyle=`rgba(70,62,88,${shade*0.6})`;titleCtx.lineWidth=1;
-titleCtx.beginPath();titleCtx.moveTo(archX-sw/2+2,sy);titleCtx.lineTo(archX+sw/2-2,sy);titleCtx.stroke()}
-
-// === E. FOG RISING FROM DEPTHS ===
-for(let f=0;f<4;f++){const fogY=groundY+20+f*12;const fogDrift=Math.sin(fr*0.008+f*2.1)*20;
-const fogW=60+f*15;const fogA=0.08-f*0.015+Math.sin(fr*0.01+f)*0.02;
-const fogG=titleCtx.createRadialGradient(archX+fogDrift,fogY,0,archX+fogDrift,fogY,fogW);
-fogG.addColorStop(0,`rgba(160,180,210,${Math.max(0,fogA)})`);fogG.addColorStop(1,'rgba(0,0,0,0)');
-titleCtx.fillStyle=fogG;titleCtx.fillRect(archX-fogW-20,fogY-fogW,fogW*2+40,fogW*2)}
-// Fog surge — occasional pulse
-const fogSurge=Math.sin(fr*0.006)*0.5+0.5;
-const surgeG=titleCtx.createRadialGradient(archX,groundY+10,0,archX,groundY-20,50+fogSurge*30);
-surgeG.addColorStop(0,`rgba(180,200,230,${0.04+fogSurge*0.03})`);surgeG.addColorStop(1,'rgba(0,0,0,0)');
-titleCtx.fillStyle=surgeG;titleCtx.fillRect(archX-100,groundY-60,200,80);
-
-// === F. IRON DOOR — leaning open against right pillar ===
-titleCtx.save();
-const doorX=archX+archW*0.3,doorY=groundY-pillarH*0.85;
-titleCtx.translate(doorX,groundY);titleCtx.rotate(-0.22);// lean angle
-titleCtx.fillStyle='rgba(35,28,22,0.7)';
-// Door body with arched top
-titleCtx.beginPath();titleCtx.moveTo(-22,0);titleCtx.lineTo(-22,-90);
-titleCtx.arc(0,-90,22,Math.PI,0,false);titleCtx.lineTo(22,0);titleCtx.closePath();titleCtx.fill();
-// Iron bands
-titleCtx.strokeStyle='rgba(50,40,30,0.6)';titleCtx.lineWidth=3;
-for(let b=0;b<4;b++){const by=-b*22-10;titleCtx.beginPath();titleCtx.moveTo(-20,by);titleCtx.lineTo(20,by);titleCtx.stroke()}
-// Rivets
-titleCtx.fillStyle='rgba(60,50,38,0.7)';
-for(let r=0;r<6;r++){const rx=(r%2===0?-16:16),ry=-r*16-8;
-titleCtx.beginPath();titleCtx.arc(rx,ry,2.5,0,Math.PI*2);titleCtx.fill()}
-// Rust patches
-titleCtx.fillStyle='rgba(100,55,25,0.15)';
-titleCtx.fillRect(-15,-60,12,18);titleCtx.fillRect(5,-30,10,14);
-// Broken hinge at top
-titleCtx.fillStyle='rgba(45,38,28,0.6)';titleCtx.fillRect(18,-88,8,12);
-titleCtx.restore();
-
-// === G. GLOWING RUNES — Elder Futhark on arch ===
-const runeChars=['\u16B1','\u16A8','\u16BE','\u16C1','\u16CB','\u16CF','\u16D2','\u16DA','\u16D7','\u16DE'];
-titleCtx.font='11px serif';titleCtx.textAlign='center';
-// Runes along the arch curve
-for(let r=0;r<8;r++){const ang=Math.PI-r*(Math.PI/8)-Math.PI/16;
-const runeR=archW+pillarW/2;
-const rx=archX+Math.cos(ang)*runeR;const ry=archBaseY-pillarH+Math.sin(ang)*runeR;
-const glowPhase=Math.sin(fr*0.03+r*0.8);const runeA=0.2+glowPhase*0.25;
-// Glow halo
-titleCtx.globalAlpha=runeA*0.3;titleCtx.fillStyle='#4488ff';titleCtx.font='18px serif';
-titleCtx.fillText(runeChars[r],rx,ry+4);
-// Rune itself
-titleCtx.globalAlpha=runeA;titleCtx.fillStyle='#66aaff';titleCtx.font='11px serif';
-titleCtx.fillText(runeChars[r],rx,ry+4);
-// Cast blue light on nearby stone
-const rlG=titleCtx.createRadialGradient(rx,ry,0,rx,ry,14);
-rlG.addColorStop(0,`rgba(68,136,255,${runeA*0.06})`);rlG.addColorStop(1,'rgba(0,0,0,0)');
-titleCtx.globalAlpha=1;titleCtx.fillStyle=rlG;titleCtx.fillRect(rx-14,ry-14,28,28)}
-// Runes down pillar sides
-for(let side=0;side<2;side++){for(let pr=0;pr<3;pr++){
-const prx=side===0?archX-archW-pillarW/2:archX+archW+pillarW/2;
-const pry=groundY-pr*35-25;const gp=Math.sin(fr*0.03+(pr+8+side*3)*0.8);const pa=0.15+gp*0.2;
-titleCtx.globalAlpha=pa*0.3;titleCtx.fillStyle='#4488ff';titleCtx.font='16px serif';
-titleCtx.fillText(runeChars[8+side],prx,pry);
-titleCtx.globalAlpha=pa;titleCtx.fillStyle='#66aaff';titleCtx.font='10px serif';
-titleCtx.fillText(runeChars[8+side],prx,pry)}}
+// === B. GROUND & ENTRANCE — flat hole in the ground ===
 titleCtx.globalAlpha=1;
-
-// === H. ORNATE IRON TORCH STANDS ===
-const torchPos=[{x:archX-archW-pillarW-35,side:0},{x:archX+archW+pillarW+35,side:1}];
-for(const tp of torchPos){const tx=tp.x,tBaseY=groundY;
-// Iron stand — ornate pole
-titleCtx.strokeStyle='rgba(50,38,28,0.7)';titleCtx.lineWidth=4;
-titleCtx.beginPath();titleCtx.moveTo(tx,tBaseY);titleCtx.lineTo(tx,tBaseY-100);titleCtx.stroke();
-// Base plate
-titleCtx.fillStyle='rgba(45,35,25,0.6)';
-titleCtx.beginPath();titleCtx.moveTo(tx-12,tBaseY);titleCtx.lineTo(tx+12,tBaseY);
-titleCtx.lineTo(tx+8,tBaseY-6);titleCtx.lineTo(tx-8,tBaseY-6);titleCtx.closePath();titleCtx.fill();
-// Decorative spiral at top
-titleCtx.strokeStyle='rgba(55,42,30,0.5)';titleCtx.lineWidth=2;
-for(let sp=0;sp<8;sp++){const sa=sp*0.8;const sr=3+sp*0.4;
-titleCtx.beginPath();titleCtx.arc(tx+Math.cos(sa)*sr,tBaseY-96+Math.sin(sa)*sr,1,0,Math.PI*2);titleCtx.stroke()}
-// Torch cup
-titleCtx.fillStyle='rgba(60,45,30,0.6)';
-titleCtx.beginPath();titleCtx.moveTo(tx-8,tBaseY-96);titleCtx.lineTo(tx-10,tBaseY-104);
-titleCtx.lineTo(tx+10,tBaseY-104);titleCtx.lineTo(tx+8,tBaseY-96);titleCtx.closePath();titleCtx.fill();
-// Rust spots
-titleCtx.fillStyle='rgba(100,58,28,0.2)';titleCtx.fillRect(tx-2,tBaseY-70,5,8);titleCtx.fillRect(tx-3,tBaseY-40,4,6);
-// === LARGE ANIMATED FLAMES ===
-const ty=tBaseY-108;
-const f1=Math.sin(fr*0.12+tp.side*4)*4;const f2=Math.cos(fr*0.17+tp.side*3)*3;
-const f3=Math.sin(fr*0.23+tp.side*7)*2;const windGust=Math.sin(fr*0.008+tp.side*5)*3;
-// Outer glow — large warm radius
-const fOG=titleCtx.createRadialGradient(tx+f2+windGust,ty-10+f1,0,tx,ty-5,50);
-fOG.addColorStop(0,'rgba(255,140,30,0.12)');fOG.addColorStop(0.4,'rgba(255,80,15,0.04)');fOG.addColorStop(1,'rgba(0,0,0,0)');
-titleCtx.fillStyle=fOG;titleCtx.fillRect(tx-55,ty-60,110,75);
-// Main flame body — larger
-titleCtx.fillStyle='rgba(255,120,20,0.45)';titleCtx.beginPath();
-titleCtx.moveTo(tx-8,ty+8);titleCtx.quadraticCurveTo(tx-10+f2,ty-14,tx+f1*0.4+windGust,ty-32+f1);
-titleCtx.quadraticCurveTo(tx+10+f2,ty-14,tx+8,ty+8);titleCtx.closePath();titleCtx.fill();
-// Mid flame — orange-yellow
-titleCtx.fillStyle='rgba(255,170,40,0.45)';titleCtx.beginPath();
-titleCtx.moveTo(tx-5,ty+5);titleCtx.quadraticCurveTo(tx-6+f2*0.7,ty-8,tx+f3+windGust*0.5,ty-22+f1*0.6);
-titleCtx.quadraticCurveTo(tx+6+f2*0.7,ty-8,tx+5,ty+5);titleCtx.closePath();titleCtx.fill();
-// Inner bright core — yellow-white
-titleCtx.fillStyle='rgba(255,230,120,0.55)';titleCtx.beginPath();
-titleCtx.moveTo(tx-3,ty+3);titleCtx.quadraticCurveTo(tx-3+f2*0.3,ty-3,tx+f3*0.5,ty-12+f1*0.3);
-titleCtx.quadraticCurveTo(tx+3+f2*0.3,ty-3,tx+3,ty+3);titleCtx.closePath();titleCtx.fill();
-// Warm light cast on ground and arch stones
-const tlG=titleCtx.createRadialGradient(tx,groundY-10,0,tx,groundY-10,80);
-tlG.addColorStop(0,'rgba(255,140,40,0.06)');tlG.addColorStop(0.5,'rgba(255,100,20,0.02)');tlG.addColorStop(1,'rgba(0,0,0,0)');
-titleCtx.fillStyle=tlG;titleCtx.fillRect(tx-80,groundY-80,160,100);
-// Smoke wisps
-if(fr%20===tp.side*10){titleParts.push({x:tx+(Math.random()-0.5)*4,y:ty-30,
-vx:(Math.random()-0.5)*0.15+windGust*0.05,vy:-0.15-Math.random()*0.2,
-life:60+Math.random()*40,ml:100,size:3+Math.random()*4,type:'smoke'})}
-// Ember sparks — continuous
-if(fr%3===tp.side){titleParts.push({x:tx+(Math.random()-0.5)*8,y:ty-6,
-vx:(Math.random()-0.5)*0.6+windGust*0.1,vy:-1-Math.random()*1.5,
-life:25+Math.random()*25,ml:50,size:0.6+Math.random()*1.2,
-color:Math.random()>0.7?'#ffffcc':Math.random()>0.4?'#ffaa33':'#ff6622',type:'ember'})}}
+const gx=archX,gy=groundY;
+const hw=110,hd=130;// hole half-width, depth
+// Ground surface — flat stone floor extending outward
+titleCtx.fillStyle='rgba(35,28,50,0.5)';
+titleCtx.fillRect(gx-hw-80,gy,hw*2+160,8);
+// Ground texture lines
+titleCtx.strokeStyle='rgba(55,45,75,0.25)';titleCtx.lineWidth=1;
+for(let g=0;g<12;g++){const gxo=gx-hw-70+g*((hw*2+140)/11);
+titleCtx.beginPath();titleCtx.moveTo(gxo,gy);titleCtx.lineTo(gxo+(Math.random()-0.5)*4,gy+8);titleCtx.stroke()}
+// Cracked ground lines radiating from hole
+titleCtx.strokeStyle='rgba(50,40,70,0.2)';titleCtx.lineWidth=1;
+for(let c=0;c<8;c++){const ca=-Math.PI*0.15+Math.PI*1.3/7*c;const cl=30+((c*17)%25);
+const csx=gx+Math.cos(ca)*(hw+5),csy=gy+4;
+titleCtx.beginPath();titleCtx.moveTo(csx,csy);
+titleCtx.lineTo(csx+Math.cos(ca)*cl,csy-Math.sin(ca)*cl*0.3);titleCtx.stroke()}
+// Dark hole — rectangular opening in the ground, perspective trapezoid
+titleCtx.fillStyle='rgba(2,1,6,0.95)';
+titleCtx.beginPath();
+titleCtx.moveTo(gx-hw,gy+6);titleCtx.lineTo(gx+hw,gy+6);
+titleCtx.lineTo(gx+hw*0.45,gy+hd);titleCtx.lineTo(gx-hw*0.45,gy+hd);
+titleCtx.closePath();titleCtx.fill();
+// Subtle purple glow from deep below
+const deepG=titleCtx.createRadialGradient(gx,gy+hd+10,0,gx,gy+hd+10,80);
+deepG.addColorStop(0,`rgba(100,40,180,${0.06+breathe*0.03})`);
+deepG.addColorStop(1,'rgba(0,0,0,0)');
+titleCtx.fillStyle=deepG;titleCtx.fillRect(gx-80,gy+hd-40,160,80);
+// Side walls of the hole — left wall (lit slightly) and right wall (darker)
+titleCtx.fillStyle='rgba(45,35,65,0.45)';
+titleCtx.beginPath();titleCtx.moveTo(gx-hw,gy+6);titleCtx.lineTo(gx-hw+18,gy+6);
+titleCtx.lineTo(gx-hw*0.45+8,gy+hd);titleCtx.lineTo(gx-hw*0.45,gy+hd);titleCtx.closePath();titleCtx.fill();
+titleCtx.fillStyle='rgba(28,22,42,0.45)';
+titleCtx.beginPath();titleCtx.moveTo(gx+hw,gy+6);titleCtx.lineTo(gx+hw-18,gy+6);
+titleCtx.lineTo(gx+hw*0.45-8,gy+hd);titleCtx.lineTo(gx+hw*0.45,gy+hd);titleCtx.closePath();titleCtx.fill();
+// Stone brick texture on walls
+titleCtx.strokeStyle='rgba(60,50,80,0.12)';titleCtx.lineWidth=1;
+for(let b=0;b<6;b++){const t=b/6;
+const ly=gy+6+t*(hd-6);const lxL=gx-hw+(hw-hw*0.45)*t;const lxR=gx+hw-(hw-hw*0.45)*t;
+titleCtx.beginPath();titleCtx.moveTo(lxL,ly);titleCtx.lineTo(lxL+16-t*8,ly);titleCtx.stroke();
+titleCtx.beginPath();titleCtx.moveTo(lxR,ly);titleCtx.lineTo(lxR-16+t*8,ly);titleCtx.stroke()}
+// Steps descending — clear 3D perspective stairs
+const stepCount=8;const stepStartY=gy+8;const stepEndY=gy+hd-5;
+for(let s=0;s<stepCount;s++){const t=s/stepCount;const nt=(s+1)/stepCount;
+const sy=stepStartY+t*(stepEndY-stepStartY);const ny=stepStartY+nt*(stepEndY-stepStartY);
+const swTop=hw*0.9*(1-t*0.5);const swBot=hw*0.9*(1-nt*0.5);
+const stepH=3+t*2;
+const shade=0.25-t*0.18;
+titleCtx.fillStyle=`rgba(60,50,85,${shade})`;
+titleCtx.beginPath();titleCtx.moveTo(gx-swTop,sy);titleCtx.lineTo(gx+swTop,sy);
+titleCtx.lineTo(gx+swBot,ny);titleCtx.lineTo(gx-swBot,ny);titleCtx.closePath();titleCtx.fill();
+titleCtx.fillStyle=`rgba(40,32,60,${shade+0.08})`;
+titleCtx.beginPath();titleCtx.moveTo(gx-swBot,ny);titleCtx.lineTo(gx+swBot,ny);
+titleCtx.lineTo(gx+swBot,ny+stepH);titleCtx.lineTo(gx-swBot,ny+stepH);titleCtx.closePath();titleCtx.fill();
+titleCtx.strokeStyle=`rgba(100,85,130,${shade*0.5})`;titleCtx.lineWidth=1;
+titleCtx.beginPath();titleCtx.moveTo(gx-swBot+1,ny);titleCtx.lineTo(gx+swBot-1,ny);titleCtx.stroke()}
+// Stone frame around the hole opening — thick border
+titleCtx.strokeStyle='rgba(65,52,88,0.5)';titleCtx.lineWidth=6;
+titleCtx.beginPath();titleCtx.moveTo(gx-hw-3,gy+4);titleCtx.lineTo(gx+hw+3,gy+4);titleCtx.stroke();
+titleCtx.lineWidth=4;
+titleCtx.beginPath();titleCtx.moveTo(gx-hw,gy+6);titleCtx.lineTo(gx-hw*0.45,gy+hd);titleCtx.stroke();
+titleCtx.beginPath();titleCtx.moveTo(gx+hw,gy+6);titleCtx.lineTo(gx+hw*0.45,gy+hd);titleCtx.stroke();
+titleCtx.strokeStyle='rgba(100,85,130,0.15)';titleCtx.lineWidth=1;
+titleCtx.beginPath();titleCtx.moveTo(gx-hw-3,gy+2);titleCtx.lineTo(gx+hw+3,gy+2);titleCtx.stroke();
+// Rune carvings on the stone frame — faint glow
+const runeGlow=0.1+breathe*0.05;
+const runeChars=['\u16B1','\u16A8','\u16BE','\u16C1','\u16CB','\u16CF','\u16D2','\u16DA','\u16D7','\u16DE'];
+titleCtx.font='8px Silkscreen';titleCtx.textAlign='center';
+for(let r=0;r<5;r++){const rx=gx-hw+20+r*((hw*2-40)/4);
+titleCtx.globalAlpha=runeGlow+Math.sin(fr*0.025+r*1.8)*0.03;
+titleCtx.fillStyle='rgba(160,110,240,1)';
+titleCtx.fillText(runeChars[r],rx,gy-2)}
+titleCtx.globalAlpha=1;
+// Fog rising from depths
+for(let f=0;f<4;f++){const fogY=gy+20+f*12;const fogDrift=Math.sin(fr*0.008+f*2.1)*20;
+const fogW=60+f*15;const fogA=0.08-f*0.015+Math.sin(fr*0.01+f)*0.02;
+const fogG=titleCtx.createRadialGradient(gx+fogDrift,fogY,0,gx+fogDrift,fogY,fogW);
+fogG.addColorStop(0,`rgba(160,180,210,${Math.max(0,fogA)})`);fogG.addColorStop(1,'rgba(0,0,0,0)');
+titleCtx.fillStyle=fogG;titleCtx.fillRect(gx-fogW-20,fogY-fogW,fogW*2+40,fogW*2)}
+// Torches — one on each side of the hole
+const torchX=[gx-hw-30,gx+hw+30];
+for(let ti=0;ti<2;ti++){const tx=torchX[ti],ty=gy-40;
+titleCtx.fillStyle='rgba(70,55,45,0.5)';titleCtx.fillRect(tx-2,ty+10,4,50);
+titleCtx.strokeStyle='rgba(90,70,55,0.4)';titleCtx.lineWidth=2;
+titleCtx.beginPath();titleCtx.moveTo(tx,ty+15);titleCtx.lineTo(tx+(ti===0?12:-12),ty+30);titleCtx.stroke();
+titleCtx.fillStyle='rgba(80,60,40,0.5)';titleCtx.fillRect(tx-4,ty+5,8,12);
+const fFlicker=Math.sin(fr*0.15+ti*3)*3;const fFlicker2=Math.cos(fr*0.2+ti*5)*2;
+const fG=titleCtx.createRadialGradient(tx+fFlicker2,ty-8+fFlicker,0,tx,ty-5,22);
+fG.addColorStop(0,'rgba(255,160,40,0.15)');fG.addColorStop(0.5,'rgba(255,100,20,0.05)');fG.addColorStop(1,'rgba(0,0,0,0)');
+titleCtx.fillStyle=fG;titleCtx.fillRect(tx-25,ty-35,50,45);
+titleCtx.fillStyle='rgba(255,140,30,0.4)';titleCtx.beginPath();
+titleCtx.moveTo(tx-5,ty+6);titleCtx.quadraticCurveTo(tx-7+fFlicker2,ty-8,tx+fFlicker*0.5,ty-18+fFlicker);
+titleCtx.quadraticCurveTo(tx+7+fFlicker2,ty-8,tx+5,ty+6);titleCtx.closePath();titleCtx.fill();
+titleCtx.fillStyle='rgba(255,220,100,0.5)';titleCtx.beginPath();
+titleCtx.moveTo(tx-2,ty+4);titleCtx.quadraticCurveTo(tx-3+fFlicker2*0.5,ty-4,tx+fFlicker*0.3,ty-10+fFlicker*0.5);
+titleCtx.quadraticCurveTo(tx+3+fFlicker2*0.5,ty-4,tx+2,ty+4);titleCtx.closePath();titleCtx.fill();
+const tlG=titleCtx.createRadialGradient(tx,gy,0,tx,gy,50);
+tlG.addColorStop(0,'rgba(255,150,50,0.04)');tlG.addColorStop(1,'rgba(0,0,0,0)');
+titleCtx.fillStyle=tlG;titleCtx.fillRect(tx-50,gy-20,100,40);
+if(fr%12===ti*6){titleParts.push({x:tx+(Math.random()-0.5)*6,y:ty-12,
+vx:(Math.random()-0.5)*0.8,vy:-0.8-Math.random()*1.2,
+life:25+Math.random()*20,ml:45,size:0.8+Math.random()*0.8,
+color:Math.random()>0.5?'#ffaa33':'#ff8820',type:'ember'})}}
+// Dust motes rising from the hole
+if(fr%5===0){const mx=gx+(Math.random()-0.5)*hw*0.8;
+titleParts.push({x:mx,y:gy+hd*0.5+Math.random()*30,
+vx:(Math.random()-0.5)*0.2,vy:-0.3-Math.random()*0.5,
+life:60+Math.random()*50,ml:110,size:0.5+Math.random()*1,
+color:Math.random()>0.8?'rgba(180,120,255,0.7)':'rgba(120,100,160,0.5)',type:'ember'})}
 
 // === I. GLOWING BLUE FLOWERS ===
 for(const fl of titleFlowers){const fx=archX+fl.xOff*W;const fy=groundY+4+fl.yOff*100;
@@ -2414,7 +2342,7 @@ titleCtx.globalAlpha=1;
 if(fr%90===0){titleParts.push({x:Math.random()*W,y:-5,vx:0.2+Math.random()*0.3,vy:0.3+Math.random()*0.4,
 life:200+Math.random()*100,ml:300,size:2+Math.random()*2,rot:Math.random()*Math.PI*2,type:'leaf'})}
 // Fog wisps from entrance
-if(fr%25===0){titleParts.push({x:archX+(Math.random()-0.5)*archW,y:groundY+5,
+if(fr%25===0){titleParts.push({x:archX+(Math.random()-0.5)*110,y:groundY+5,
 vx:(Math.random()-0.5)*0.15,vy:-0.1-Math.random()*0.2,
 life:80+Math.random()*60,ml:140,size:8+Math.random()*15,type:'fogwisp'})}
 // Update & draw all title particles
@@ -3461,13 +3389,15 @@ document.getElementById('intro-text').innerHTML='';begin()},900)}
 
 function drawIntro(){
 if(!introCtx)return;
-introCtx.fillStyle='rgba(4,4,8,0.04)';introCtx.fillRect(0,0,W,H);
+// Full clear to prevent ember ghost artifacts
+introCtx.clearRect(0,0,W,H);
+introCtx.fillStyle='#040408';introCtx.fillRect(0,0,W,H);
 const progress=introStep/INTRO_SEQUENCE.length;
 // Warm fireplace glow at bottom-center, grows with story
 const glowR=80+progress*60;
 const glow=introCtx.createRadialGradient(W/2,H*0.92,0,W/2,H*0.85,glowR);
-glow.addColorStop(0,`rgba(255,${Math.floor(100+progress*60)},${Math.floor(20+progress*30)},0.03)`);
-glow.addColorStop(0.5,`rgba(255,80,10,0.008)`);glow.addColorStop(1,'rgba(0,0,0,0)');
+glow.addColorStop(0,`rgba(255,${Math.floor(100+progress*60)},${Math.floor(20+progress*30)},0.06)`);
+glow.addColorStop(0.5,'rgba(255,80,10,0.015)');glow.addColorStop(1,'rgba(0,0,0,0)');
 introCtx.fillStyle=glow;introCtx.fillRect(0,0,W,H);
 // v10 Ember/firecamp sparks rising
 // Regular embers — 2-3 per frame, warm colors, upward drift with wander
@@ -3485,13 +3415,13 @@ p.x+=p.vx+Math.sin(p.life*0.05+p.wander)*0.3;
 p.y+=p.vy;p.vy*=0.998;p.life--;
 if(p.life<=0||INTRO_PARTS.length>200){INTRO_PARTS.splice(i,1);continue}
 const pa=p.life/p.ml;const flicker=0.5+Math.sin(p.life*p.flickerSpd)*0.4;
-// Glow halo
-introCtx.globalAlpha=pa*0.08*flicker;
+// Glow halo — reduced opacity to prevent artifacts
+introCtx.globalAlpha=pa*0.04*flicker;
 const eg=introCtx.createRadialGradient(p.x,p.y,0,p.x,p.y,p.size*4);
 eg.addColorStop(0,'rgba(255,140,30,0.4)');eg.addColorStop(1,'rgba(0,0,0,0)');
 introCtx.fillStyle=eg;introCtx.fillRect(p.x-p.size*4,p.y-p.size*4,p.size*8,p.size*8);
 // Ember body — elongated along velocity
-introCtx.globalAlpha=pa*0.35*flicker;introCtx.fillStyle=p.color;
+introCtx.globalAlpha=pa*0.25*flicker;introCtx.fillStyle=p.color;
 introCtx.save();introCtx.translate(p.x,p.y);
 const angle=Math.atan2(p.vy,p.vx+Math.sin(p.life*0.05+p.wander)*0.3);
 introCtx.rotate(angle);
@@ -4255,6 +4185,7 @@ if(multiKillT>0){multiKillT-=sdt}else{multiKillN=0}
 if(camZoomT>0){camZoomT-=sdt}else{
 // Target zoom based on combat context
 const liveEnts=ents.filter(e=>e.animState!=='die');const nE=liveEnts.length;
+const bossEnt=liveEnts.find(e=>e.boss);
 let targetZoom=1;
 if(bossEnt)targetZoom=0.92;// boss fight: wider view
 else if(nE>=6)targetZoom=0.94;// many enemies: zoom out
@@ -4449,21 +4380,21 @@ emit(e.x,e.y,20,e.color,4,20,2.5);addShockwave(e.x,e.y,120,e.color,20);addShockw
 flash(e.color,.2);chromAb=6;shk=8;slMo=20;msg('BOSS PHASE 2',800);projs.length=0;sfx('boss_phase');
 hitFreezeX=e.x;hitFreezeY=e.y;hitSt=Math.max(hitSt,8);
 // v10 Boss phase dialogue at 75%
-const bpd75=BOSS_PHASE_DIALOGUE[e.bossIdx];if(bpd75)setTimeout(()=>{if(bossEnt)showDialogue(bpd75.p75,e.color)},600);
+const bpd75=BOSS_PHASE_DIALOGUE[e.bossIdx];if(bpd75)setTimeout(()=>{if(e.hp>0)showDialogue(bpd75.p75,e.color)},600);
 for(let pp=0;pp<12;pp++){const pa=Math.PI*2/12*pp;emit(e.x+Math.cos(pa)*40,e.y+Math.sin(pa)*40,4,e.color,2,10,1.5)}
 const bw75=Math.min(360,W*.55),bx75=(W-bw75)/2;for(let sp=0;sp<10;sp++)uiParts.push({x:bx75+bw75*0.75,y:58,vx:(Math.random()-.5)*4,vy:-2-Math.random()*3,life:25+Math.random()*15,ml:40,color:e.color,size:2+Math.random()*2})}
 if(!e.phase50&&e.hp<e.mhp*0.50){e.phase50=true;e.inv=30;e.hw=Math.floor(e.hw*1.15);e.hh=Math.floor(e.hh*1.15);
 emit(e.x,e.y,25,e.color,5,24,3);addShockwave(e.x,e.y,150,e.color,24);addShockwave(e.x,e.y,80,'#ff4444',16);
 flash('#ffffff',.35);chromAb=8;shk=18;slMo=25;msg('BOSS GROWING STRONGER',900);projs.length=0;sfx('boss_phase');
 hitFreezeX=e.x;hitFreezeY=e.y;hitSt=Math.max(hitSt,12);
-const bpd50=BOSS_PHASE_DIALOGUE[e.bossIdx];if(bpd50)setTimeout(()=>{if(bossEnt)showDialogue(bpd50.p50,e.color)},600);
+const bpd50=BOSS_PHASE_DIALOGUE[e.bossIdx];if(bpd50)setTimeout(()=>{if(e.hp>0)showDialogue(bpd50.p50,e.color)},600);
 addDynLight(e.x,e.y,150,e.color,1.2,0.15,0);for(let pp=0;pp<16;pp++){const pa=Math.PI*2/16*pp;emit(e.x+Math.cos(pa)*50,e.y+Math.sin(pa)*50,5,e.color,3,14,2)}
 const bw50=Math.min(360,W*.55),bx50=(W-bw50)/2;for(let sp=0;sp<14;sp++)uiParts.push({x:bx50+bw50*0.5,y:58,vx:(Math.random()-.5)*5,vy:-2-Math.random()*4,life:30+Math.random()*15,ml:45,color:'#ff4444',size:2+Math.random()*3})}
 if(!e.phase25&&e.hp<e.mhp*0.25){e.phase25=true;e.enraged=1;e.spd*=1.6;e.atkSpd*=.55;e.inv=30;
 emit(e.x,e.y,30,'#ff0044',6,28,3);addShockwave(e.x,e.y,180,'#ff0044',28);addShockwave(e.x,e.y,100,'#ffff00',20);addShockwave(e.x,e.y,50,'#ffffff',10);
 flash('#ff0000',.4);chromAb=12;shk=25;slMo=35;msg('BOSS ENRAGED!',900);projs.length=0;
 hitFreezeX=e.x;hitFreezeY=e.y;hitSt=Math.max(hitSt,15);
-const bpd25=BOSS_PHASE_DIALOGUE[e.bossIdx];if(bpd25)setTimeout(()=>{if(bossEnt)showDialogue(bpd25.p25,e.color)},600);
+const bpd25=BOSS_PHASE_DIALOGUE[e.bossIdx];if(bpd25)setTimeout(()=>{if(e.hp>0)showDialogue(bpd25.p25,e.color)},600);
 addDynLight(e.x,e.y,200,'#ff0044',1.5,0.2,0);for(let pp=0;pp<20;pp++){const pa=Math.PI*2/20*pp;emit(e.x+Math.cos(pa)*60,e.y+Math.sin(pa)*60,6,'#ff0044',3,18,2.5)}
 const bw25=Math.min(360,W*.55),bx25=(W-bw25)/2;for(let sp=0;sp<18;sp++)uiParts.push({x:bx25+bw25*0.25,y:58,vx:(Math.random()-.5)*6,vy:-3-Math.random()*4,life:30+Math.random()*20,ml:50,color:'#ff0044',size:3+Math.random()*3})}}
 
